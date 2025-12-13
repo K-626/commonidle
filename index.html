@@ -4,7 +4,7 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>ふつうの放置ゲーム</title>
+    <title>簡易放置ゲーム（Z）</title>
     <style>
         :root {
             --bg: #0f1724;
@@ -506,7 +506,7 @@
                 <div id="monoPanel"></div>
             </div>
             <div style="display:flex;gap:8px">
-                <div style="flex:1" class="small">バージョン: 1.01 · 保存はブラウザに保持</div>
+                <div style="flex:1" class="small">バージョン: 1.0 · 保存はブラウザに保持</div>
             </div>
         </div>
     </div>
@@ -592,6 +592,18 @@
                     ;
                 g.producerMultipliers['villager'] = (g.producerMultipliers['villager'] || 1) * 6;
                 g.producerMultipliers['farmer'] = (g.producerMultipliers['farmer'] || 1) * 6;
+            }
+        },
+        
+        {
+
+            id: 'clickserious',
+            name: 'クリックだって本気です',
+            desc: 'クリックがすっごいふえる',
+            cost: 500000000,
+            bought: false,
+            apply: (g) => {
+                g.clickPower*=1000000000000000
             }
         }
 
