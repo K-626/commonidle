@@ -4,7 +4,7 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>簡易放置ゲーム（Z）</title>
+    <title>ふつうの放置ゲーム</title>
     <style>
         :root {
             --bg: #0f1724;
@@ -506,7 +506,7 @@
                 <div id="monoPanel"></div>
             </div>
             <div style="display:flex;gap:8px">
-                <div style="flex:1" class="small">バージョン: 1.0 · 保存はブラウザに保持</div>
+                <div style="flex:1" class="small">バージョン: 1.01 · 保存はブラウザに保持</div>
             </div>
         </div>
     </div>
@@ -665,6 +665,22 @@
 
             ,
         {
+            id: 'art_coop',
+            name: '農業協同組合',
+            desc: '村人のコストがめっちゃ減る',
+            cost: 25000,
+            x: 80,
+            y: 20,
+            parent: 'art_tablet',
+            icon: '🤝',
+            apply: (g) => {
+                const v = producers.find(p => p.id === 'villager');
+                if (v) v.baseCost = v.baseCost * 0.00000000000001;
+            }
+        }
+
+            ,
+        {
 
             id: 'art_crop',
             name: '輪作',
@@ -684,7 +700,7 @@
         {
             id: 'art_manager',
             name: 'しんぎゅらりてぃ？',
-            desc: '最も生産が高い設備を自動で購入 / On/Off可能',
+            desc: '最も生産が高い設備を自動で購入 ',
             cost: 50000,
             x: 50,
             y: 80,
@@ -748,6 +764,22 @@
             reward: gs => {
                 gs.money += 5
             }
+        },
+        {
+
+            id: 'hireOne',
+            name: 'Lv999の村人',
+            desc: '???',
+            condition: gs => producers.find(p => p.id === 'villager').count >= 999,
+            rewarded: false,
+            reward: gs => {
+                apply: (g) => {
+                    if (!g.producerMultipliers) g.producerMultipliers = {}
+
+                        ;
+                    g.producerMultipliers['villager'] = (g.producerMultipliers['villager'] || 1) * 999999;
+                }
+            }
         }
 
         ];
@@ -795,6 +827,7 @@
         /* ----- ユーティリティ関数 ----- */
         function formatNum(n) {
             if (!isFinite(n)) return '0';
+            if (n >= 1e15) return n.toExponential(2);
             if (n >= 1e12) return (n / 1e12).toFixed(2) + 'T';
             if (n >= 1e9) return (n / 1e9).toFixed(2) + 'B';
             if (n >= 1e6) return (n / 1e6).toFixed(2) + 'M';
@@ -1534,19 +1567,16 @@
             // Achievements are NOT reset on reincarnation (usually) but here we follow simple logic:
             // If simple reset, wipe all. If reincarnation, maybe keep? 
             // For now, let's keep achievements on Reincarnation, wipe on Reset.
-            if (!canReincarnate) {
-                achievements = defaultAchievements.map(a => ({
-                    ...a
-                }));
+            // Achievements are reset on both Reset and Reincarnation as per request
+            achievements = defaultAchievements.map(a => ({
+                ...a,
+                rewarded: false // Explicitly reset
+            }));
+
+            if (canReincarnate) {
+                // Keep stats if needed or handled above
             }
 
-            else {
-                // Keep achievements but re-bind functions just in case
-                // Actually achievements state is in `achievements` array. 
-                // We need to ensure `condition` and `reward` functions are preserved if we loaded from JSON?
-                // No, we map from defaultAchievements on load. 
-                // So here, we just keep the current `achievements` array as is.
-            }
 
             gameState = {
 
