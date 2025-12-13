@@ -384,12 +384,59 @@
                 order: 2
             }
         }
+
+
+
+        /* Toggle Switch */
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 36px;
+            height: 20px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #334155;
+            transition: .4s;
+            border-radius: 20px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 16px;
+            width: 16px;
+            left: 2px;
+            bottom: 2px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked+.slider {
+            background-color: var(--accent);
+        }
+
+        input:checked+.slider:before {
+            transform: translateX(16px);
+        }
     </style>
 </head>
 
 <body>
-    <div class="container">
-        <!-- LEFT -->
+    <div class="container"><!-- LEFT -->
         <div class="left" id="leftPanel">
             <div class="left-top">
                 <div class="money">
@@ -401,7 +448,6 @@
                     <div class="value" id="zps">0 Z/s</div>
                 </div>
             </div>
-
             <div class="left-middle" id="leftMiddle">
                 <h3 style="margin:6px 0 10px 0">統計 / セーブ</h3>
                 <div class="card" style="margin-bottom:8px">
@@ -414,16 +460,21 @@
                         </div>
                     </div>
                 </div>
-                <div class="card">
-                    <button id="saveBtn" class="buy-btn" style="width:100%;margin-bottom:8px">セーブ</button>
-                    <button id="loadBtn" class="buy-btn" style="width:100%;margin-bottom:8px">ロード</button>
-                    <button id="resetBtn" class="buy-btn"
-                        style="width:100%;background:#7f1d1d;border-color:#7f1d1d">リセット</button>
+                <div class="card"><button id="saveBtn" class="buy-btn"
+                        style="width:100%;margin-bottom:8px">セーブ</button><button id="loadBtn" class="buy-btn"
+                        style="width:100%;margin-bottom:8px">ロード</button><button id="resetBtn" class="buy-btn"
+                        style="width:100%;background:#7f1d1d;border-color:#7f1d1d">リセット</button></div>
+                <div class="card" id="automationPanel" style="display:none; margin-top:8px">
+                    <div style="display:flex; justify-content:space-between; align-items:center">
+                        <div style="font-size:13px; color:var(--accent)">自動購入</div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="autoBuyToggle" checked>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
                 </div>
             </div>
-        </div>
-
-        <!-- CENTER -->
+        </div><!-- CENTER -->
         <div class="center">
             <div class="big-action">
                 <div class="big-click" id="tapGain">クリックでZを得る</div>
@@ -437,32 +488,23 @@
                         <div style="font-weight:700" id="nextVillagerCost">--</div>
                     </div>
                 </div>
-            </div>
-
-            <!-- Artifact Tree Section -->
+            </div><!-- Artifact Tree Section -->
             <div class="artifact-panel" id="artifactPanel">
-                <h4 style="margin:0 0 12px 0; text-align:center; color:var(--muted)">アーティファクト</h4>
-                <svg class="artifact-tree-svg" id="treeSvg"></svg>
+                <h4 style="margin:0 0 12px 0; text-align:center; color:var(--muted)">アーティファクト</h4><svg
+                    class="artifact-tree-svg" id="treeSvg"></svg>
                 <div id="treeNodes"></div>
                 <div class="artifact-tooltip" id="artifactTooltip"></div>
             </div>
-
-
-        </div>
-
-        <!-- RIGHT -->
+        </div><!-- RIGHT -->
         <div class="right">
             <div class="tabs">
                 <div class="tab-btn active" data-tab="mono" id="tabMono">モノ</div>
                 <div class="tab-btn" data-tab="chie" id="tabChie">知恵</div>
                 <div class="tab-btn" data-tab="ach" id="tabAch">実績</div>
             </div>
-
-            <div class="tab-content" id="tabContent">
-                <!-- default: モノ -->
+            <div class="tab-content" id="tabContent"><!-- default: モノ -->
                 <div id="monoPanel"></div>
             </div>
-
             <div style="display:flex;gap:8px">
                 <div style="flex:1" class="small">バージョン: 1.0 · 保存はブラウザに保持</div>
             </div>
@@ -470,76 +512,282 @@
     </div>
     <script>
         /*
-          日本語コメント付き JavaScript（修正版・完全版）
-          ※ 機能は元のまま、バグ修正と最小フォールバックのみを追加しています。
-        */
+                  日本語コメント付き JavaScript（修正版・完全版）
+                  ※ 機能は元のまま、バグ修正と最小フォールバックのみを追加しています。
+                */
 
         /* ----- 定数と初期データ ----- */
         const GAME_SAVE_KEY = "idle_z_save_v1";
 
-        const defaultProducers = [
-            { id: 'villager', name: '村人', baseCost: 10, costMult: 1.15, baseProd: 0.5, count: 0, icon: '👨‍🌾' },
-            { id: 'farmer', name: '農夫', baseCost: 120, costMult: 1.15, baseProd: 6, count: 0, icon: '🌾' },
-            { id: 'miner', name: '採掘者', baseCost: 1500, costMult: 1.15, baseProd: 80, count: 0, icon: '⛏️' },
-            { id: 'factory', name: '工場', baseCost: 20000, costMult: 1.17, baseProd: 1200, count: 0, icon: '🏭' }
+        const defaultProducers = [{
+            id: 'villager', name: '村人', baseCost: 10, costMult: 1.15, baseProd: 0.5, count: 0, icon: '👨‍🌾'
+        }
+
+            ,
+        {
+            id: 'farmer', name: '農夫', baseCost: 120, costMult: 1.15, baseProd: 6, count: 0, icon: '🌾'
+        }
+
+            ,
+        {
+            id: 'miner', name: '採掘者', baseCost: 1500, costMult: 1.15, baseProd: 80, count: 0, icon: '⛏️'
+        }
+
+            ,
+        {
+            id: 'factory', name: '工場', baseCost: 20000, costMult: 1.17, baseProd: 1200, count: 0, icon: '🏭'
+        }
+
         ];
 
-        const defaultUpgrades = [
-            { id: 'clickBoost', name: 'クリック効率 +2', desc: 'クリックで得るZが増える', cost: 50, bought: false, apply: (g) => { g.clickPower += 2 } },
-            { id: 'prodBoost1', name: '生産効率 +25%', desc: '全ユニットの生産が+25%', cost: 1000, bought: false, apply: (g) => { g.globalMultiplier *= 1.25 } },
-            { id: 'prodBoost2', name: '生産効率 +100%', desc: '全ユニットの生産が+100%', cost: 20000, bought: false, apply: (g) => { g.globalMultiplier *= 2 } },
-            {
-                id: 'intensiveFarming', name: '集約的農業', desc: '村人と農夫の生産が+500%', cost: 5000, bought: false, apply: (g) => {
-                    if (!g.producerMultipliers) g.producerMultipliers = {};
-                    g.producerMultipliers['villager'] = (g.producerMultipliers['villager'] || 1) * 6;
-                    g.producerMultipliers['farmer'] = (g.producerMultipliers['farmer'] || 1) * 6;
-                }
+        const defaultUpgrades = [{
+
+            id: 'clickBoost',
+            name: 'クリック効率 +2',
+            desc: 'クリックで得るZが増える',
+            cost: 50,
+            bought: false,
+            apply: (g) => {
+                g.clickPower += 2
             }
-        ];
+        }
 
-        const defaultArtifacts = [
-            { id: 'art_tablet', name: '古代の石板', desc: '生産効率 +10000%', cost: 100, x: 50, y: 20, parent: null, icon: '📜', apply: (g) => { g.globalMultiplier *= 101; } },
-            { id: 'art_stone', name: '石の道具', desc: 'クリック +500', cost: 500, x: 30, y: 50, parent: 'art_tablet', icon: '🪨', apply: (g) => { g.clickPower += 500; } },
-            {
-                id: 'art_irrig', name: '灌漑', desc: '農夫の生産 +5000%', cost: 1000, x: 70, y: 50, parent: 'art_tablet', icon: '💧', apply: (g) => {
-                    if (!g.producerMultipliers) g.producerMultipliers = {};
-                    g.producerMultipliers['farmer'] = (g.producerMultipliers['farmer'] || 1) * 51;
-                }
-            },
-            { id: 'art_iron', name: '鉄の道具', desc: 'クリック +1000', cost: 2000, x: 20, y: 80, parent: 'art_stone', icon: '⚔️', apply: (g) => { g.clickPower += 1000; } },
-            {
-                id: 'art_crop', name: '輪作', desc: '農夫の生産 +10000%', cost: 5000, x: 80, y: 80, parent: 'art_irrig', icon: '🔄', apply: (g) => {
-                    if (!g.producerMultipliers) g.producerMultipliers = {};
-                    g.producerMultipliers['farmer'] = (g.producerMultipliers['farmer'] || 1) * 101;
-                }
+            ,
+        {
+
+            id: 'prodBoost1',
+            name: '生産効率 +25%',
+            desc: '全ユニットの生産が+25%',
+            cost: 1000,
+            bought: false,
+            apply: (g) => {
+                g.globalMultiplier *= 1.25
             }
+        }
+
+            ,
+        {
+
+            id: 'prodBoost2',
+            name: '生産効率 +100%',
+            desc: '全ユニットの生産が+100%',
+            cost: 20000,
+            bought: false,
+            apply: (g) => {
+                g.globalMultiplier *= 2
+            }
+        }
+
+            ,
+        {
+
+            id: 'intensiveFarming',
+            name: '集約的農業',
+            desc: '村人と農夫の生産が+500%',
+            cost: 5000,
+            bought: false,
+            apply: (g) => {
+                if (!g.producerMultipliers) g.producerMultipliers = {}
+
+                    ;
+                g.producerMultipliers['villager'] = (g.producerMultipliers['villager'] || 1) * 6;
+                g.producerMultipliers['farmer'] = (g.producerMultipliers['farmer'] || 1) * 6;
+            }
+        }
+
         ];
 
-        const defaultAchievements = [
-            { id: 'firstZ', name: '最初の10Z', desc: 'Zを10獲得', condition: gs => gs.totalZ >= 10, rewarded: false, reward: gs => { gs.money += 20 } },
-            { id: 'hundredZ', name: 'Zを100獲得', desc: 'Zを100獲得', condition: gs => gs.totalZ >= 100, rewarded: false, reward: gs => { gs.globalMultiplier *= 1.10 } },
-            { id: 'hireOne', name: '村人を雇う', desc: '村人を1人雇う', condition: gs => producers.find(p => p.id === 'villager').count >= 1, rewarded: false, reward: gs => { gs.money += 5 } }
+        const defaultArtifacts = [{
+
+            id: 'art_tablet',
+            name: '古代の石板',
+            desc: '生産効率 +10000%',
+            cost: 100,
+            x: 50,
+            y: 20,
+            parent: null,
+            icon: '📜',
+            apply: (g) => {
+                g.globalMultiplier *= 101;
+            }
+        }
+
+            ,
+        {
+
+            id: 'art_stone',
+            name: '石の道具',
+            desc: 'クリック +500',
+            cost: 500,
+            x: 30,
+            y: 50,
+            parent: 'art_tablet',
+            icon: '🪨',
+            apply: (g) => {
+                g.clickPower += 500;
+            }
+        }
+
+            ,
+        {
+
+            id: 'art_irrig',
+            name: '灌漑',
+            desc: '農夫の生産 +5000%',
+            cost: 1000,
+            x: 70,
+            y: 50,
+            parent: 'art_tablet',
+            icon: '💧',
+            apply: (g) => {
+                if (!g.producerMultipliers) g.producerMultipliers = {}
+
+                    ;
+                g.producerMultipliers['farmer'] = (g.producerMultipliers['farmer'] || 1) * 51;
+            }
+        }
+
+            ,
+        {
+
+            id: 'art_iron',
+            name: '鉄の道具',
+            desc: 'クリック +1000',
+            cost: 2000,
+            x: 20,
+            y: 80,
+            parent: 'art_stone',
+            icon: '⚔️',
+            apply: (g) => {
+                g.clickPower += 1000;
+            }
+        }
+
+            ,
+        {
+
+            id: 'art_crop',
+            name: '輪作',
+            desc: '農夫の生産 +10000%',
+            cost: 5000,
+            x: 80,
+            y: 80,
+            parent: 'art_irrig',
+            icon: '🔄',
+            apply: (g) => {
+                if (!g.producerMultipliers) g.producerMultipliers = {}
+
+                    ;
+                g.producerMultipliers['farmer'] = (g.producerMultipliers['farmer'] || 1) * 101;
+            }
+        },
+        {
+            id: 'art_manager',
+            name: 'しんぎゅらりてぃ？',
+            desc: '最も生産が高い設備を自動で購入 / On/Off可能',
+            cost: 50000,
+            x: 50,
+            y: 80,
+            parent: 'art_iron',
+            icon: '⚙️',
+            apply: (g) => {
+                g.autoBuy = true;
+            }
+        },
+        {
+            id: 'haguruma',
+            name: '歯車',
+            desc: '工場の生産が10000倍',
+            cost: 50000000,
+            x: 50,
+            y: 50,
+            parent: 'art_manager',
+            icon: '⚙️',
+            apply: (g) => {
+                if (!g.producerMultipliers) g.producerMultipliers = {}
+
+                    ;
+                g.producerMultipliers['factory'] = (g.producerMultipliers['factory'] || 1) * 10001;
+            }
+        }
+        ];
+
+        const defaultAchievements = [{
+
+            id: 'firstZ',
+            name: '最初の10Z',
+            desc: 'Zを10獲得',
+            condition: gs => gs.totalZ >= 10,
+            rewarded: false,
+            reward: gs => {
+                gs.money += 20
+            }
+        }
+
+            ,
+        {
+
+            id: 'hundredZ',
+            name: 'Zを100獲得',
+            desc: 'Zを100獲得',
+            condition: gs => gs.totalZ >= 100,
+            rewarded: false,
+            reward: gs => {
+                gs.globalMultiplier *= 1.10
+            }
+        }
+
+            ,
+        {
+
+            id: 'hireOne',
+            name: '村人を雇う',
+            desc: '村人を1人雇う',
+            condition: gs => producers.find(p => p.id === 'villager').count >= 1,
+            rewarded: false,
+            reward: gs => {
+                gs.money += 5
+            }
+        }
+
         ];
 
         /* ----- ゲーム状態（可変） ----- */
 
         // 関数を保ったままコピーする（JSON系は関数を消すので使わない）
-        let producers = defaultProducers.map(p => ({ ...p }));
-        let upgrades = defaultUpgrades.map(u => ({ ...u }));
-        let artifacts = defaultArtifacts.map(a => ({ ...a, bought: false }));
-        let achievements = defaultAchievements.map(a => ({ ...a }));
+        let producers = defaultProducers.map(p => ({
+            ...p
+        }));
+
+        let upgrades = defaultUpgrades.map(u => ({
+            ...u
+        }));
+
+        let artifacts = defaultArtifacts.map(a => ({
+            ...a, bought: false
+        }));
+
+        let achievements = defaultAchievements.map(a => ({
+            ...a
+        }));
 
         let gameState = {
+
             money: 0,
             totalZ: 0,
             clickPower: 1,
             globalMultiplier: 1,
-            producerMultipliers: {},
+            producerMultipliers: {}
+
+            ,
             playTimeSec: 0,
             reincarnationCount: 0,
             prestigeMultiplier: 1.0,
+            autoBuyActive: true,
             lastTick: Date.now()
-        };
+        }
+
+            ;
 
         /* ----- フォールバック用タイムスタンプ（rAFが止まったか判定するため） ----- */
         let _lastTickTime = Date.now();
@@ -557,13 +805,17 @@
 
         function calcProdPerSecond() {
             let sum = 0;
+
             for (const p of producers) {
                 let mult = 1;
+
                 if (gameState.producerMultipliers && gameState.producerMultipliers[p.id]) {
                     mult = gameState.producerMultipliers[p.id];
                 }
+
                 sum += (p.count || 0) * p.baseProd * mult;
             }
+
             sum *= gameState.globalMultiplier;
             sum *= (gameState.prestigeMultiplier || 1);
             return sum;
@@ -571,6 +823,49 @@
 
         function nextCost(p) {
             return Math.floor(p.baseCost * Math.pow(p.costMult, p.count));
+        }
+
+        function calcMaxAffordable(p, money) {
+            if (money < nextCost(p)) return 0;
+            const r = p.costMult;
+            const a = nextCost(p);
+            // Sum = a * (r^n - 1) / (r - 1) <= money
+            // r^n <= money * (r - 1) / a + 1
+            // n <= log_r( ... )
+            const n = Math.floor(Math.log(money * (r - 1) / a + 1) / Math.log(r));
+            return n;
+        }
+
+        function buyProducerMax(id) {
+            const p = producers.find(x => x.id === id);
+            if (!p) return;
+            const max = calcMaxAffordable(p, gameState.money);
+            if (max <= 0) {
+                flashInsufficient();
+                return;
+            }
+
+            // Loop to buy one by one to trigger bonuses properly
+            // (Optimization: In a real heavy game, we would calculate sums, but for this scale, a loop is fine)
+            // Actually, let's just do it in a loop to ensure all "every 10th" logic fires correctly.
+            // However, for "Max" which could be 100s, let's cap it or ensure it's performant? 
+            // Javascript loop of 1000 is instant.
+            for (let i = 0; i < max; i++) {
+                const cost = nextCost(p);
+                if (gameState.money < cost) break; // Should not happen if calculation is correct
+                gameState.money -= cost;
+                p.count += 1;
+                if (p.count % 10 === 0) {
+                    gameState.money += Math.floor(p.baseProd * 5 * gameState.globalMultiplier);
+                }
+            }
+
+            try {
+                checkAchievements();
+            } catch (e) {
+                console.error(e);
+            }
+            updateUI();
         }
 
         /* ----- UI 更新処理（表示を最新化） ----- */
@@ -594,14 +889,42 @@
             const elPrestige = document.getElementById('prestigeMult');
             if (elPrestige) elPrestige.textContent = 'x' + (gameState.prestigeMultiplier || 1).toFixed(2);
 
+            // Auto Buy Toggle
+            const autoPanel = document.getElementById('automationPanel');
+            const autoToggle = document.getElementById('autoBuyToggle');
+
+            if (autoPanel && autoToggle) {
+                if (gameState.autoBuy) {
+                    autoPanel.style.display = 'block';
+
+                    if (!autoToggle._init) {
+                        autoToggle.addEventListener('change', (e) => {
+                            gameState.autoBuyActive = e.target.checked;
+                        });
+                        autoToggle._init = true;
+                    }
+
+                    // Sync UI to state (allow user to toggle freely, but ensure state is respected)
+                    if (autoToggle.checked !== !!gameState.autoBuyActive) {
+                        autoToggle.checked = !!gameState.autoBuyActive;
+                    }
+
+                } else {
+                    autoPanel.style.display = 'none';
+                }
+            }
+
             // Reset Button Text
             const resetBtn = document.getElementById('resetBtn');
+
             if (resetBtn) {
                 if (gameState.money >= 1000000) {
                     resetBtn.textContent = '転生する';
                     resetBtn.style.background = 'linear-gradient(180deg, #f59e0b, #d97706)';
                     resetBtn.style.borderColor = '#f59e0b';
-                } else {
+                }
+
+                else {
                     resetBtn.textContent = 'リセット';
                     resetBtn.style.background = '#7f1d1d';
                     resetBtn.style.borderColor = '#7f1d1d';
@@ -626,6 +949,19 @@
             gameState.totalZ += gain;
             gameState.playTimeSec += dt;
 
+            // Auto Buy Logic
+            // Auto Buy Logic
+            if (gameState.autoBuy && gameState.autoBuyActive) {
+                // Prioritize highest tier affordable
+                for (let i = producers.length - 1; i >= 0; i--) {
+                    const p = producers[i];
+                    if (gameState.money >= nextCost(p)) {
+                        buyProducer(p.id);
+                        break; // Buy only one per tick to respect priority
+                    }
+                }
+            }
+
             checkAchievements();
         }
 
@@ -634,30 +970,48 @@
             const container = document.getElementById('monoPanel');
             if (!container) return;
             container.innerHTML = '';
+
             for (const p of producers) {
                 const el = document.createElement('div');
                 el.className = 'producer';
-                el.innerHTML = `
-      <div class="left">
-        <div style="font-size:20px">${p.icon}</div>
-        <div>
-          <div class="name">${p.name} <span style="font-size:12px;color:var(--muted)">x${p.count}</span></div>
-          <div class="meta">生産: ${formatNum(p.baseProd)} Z/s</div>
-        </div>
-      </div>
-      <div style="text-align:right">
-        <div style="font-size:13px;color:var(--muted)">価格</div>
-        <div style="font-weight:700">${formatNum(nextCost(p))} Z</div>
-        <div style="margin-top:8px"><button class="buy-btn" data-id="${p.id}" ${gameState.money < nextCost(p) ? 'disabled' : ''}>購入</button></div>
-      </div>
-    `;
+
+                const maxBuy = calcMaxAffordable(p, gameState.money);
+
+                el.innerHTML = ` <div class="left"><div style="font-size:20px">${p.icon
+                    }
+
+        </div><div><div class="name">${p.name
+                    }
+
+        <span style="font-size:12px;color:var(--muted)">x${p.count
+                    }
+
+        </span></div><div class="meta">生産: ${formatNum(p.baseProd)
+                    }
+
+        Z/s</div></div></div><div style="text-align:right"><div style="font-size:13px;color:var(--muted)">価格</div><div style="font-weight:700">${formatNum(nextCost(p))
+                    }
+
+        Z</div><div style="margin-top:8px; display:flex; gap:4px; justify-content:flex-end">
+            <button class="buy-btn" data-id="${p.id}"${gameState.money < nextCost(p) ? 'disabled' : ''
+                    }>購入</button>
+            <button class="buy-btn" data-id-max="${p.id}"${maxBuy <= 0 ? 'disabled' : ''
+                    }>Max (+${maxBuy})</button>
+        </div></div>`;
                 container.appendChild(el);
             }
 
-            container.querySelectorAll('.buy-btn').forEach(b => {
+            container.querySelectorAll('button[data-id]').forEach(b => {
                 b.onclick = () => {
                     const id = b.getAttribute('data-id');
                     buyProducer(id);
+                }
+            });
+
+            container.querySelectorAll('button[data-id-max]').forEach(b => {
+                b.onclick = () => {
+                    const id = b.getAttribute('data-id-max');
+                    buyProducerMax(id);
                 }
             });
         }
@@ -676,11 +1030,19 @@
                 }
 
                 // 実績判定を確実に行う（購入で達成する可能性があるため）
-                try { checkAchievements(); } catch (e) { console.error(e); }
+                try {
+                    checkAchievements();
+                }
+
+                catch (e) {
+                    console.error(e);
+                }
 
                 updateUI();
 
-            } else {
+            }
+
+            else {
                 flashInsufficient();
             }
         }
@@ -693,28 +1055,36 @@
 
             const panel = document.createElement('div');
             panel.id = 'chiePanel';
+
             if (upgrades.length === 0) {
                 panel.textContent = 'アップグレードはまだありません。';
-            } else {
+            }
+
+            else {
                 for (const u of upgrades) {
                     const d = document.createElement('div');
                     d.className = 'upgrade';
-                    d.innerHTML = `
-        <div>
-          <div style="font-weight:700">${u.name} ${u.bought ? '（購入済）' : ''}</div>
-          <div style="font-size:13px;color:var(--muted)">${u.desc}</div>
-        </div>
-        <div style="text-align:right">
-          <div style="font-size:13px;color:var(--muted)">価格</div>
-          <div style="font-weight:700">${formatNum(u.cost)} Z</div>
-          <div style="margin-top:8px">
-            <button class="buy-btn" data-upg="${u.id}" ${u.bought || gameState.money < u.cost ? 'disabled' : ''}>購入</button>
-          </div>
-        </div>
-      `;
+
+                    d.innerHTML = ` <div><div style="font-weight:700">${u.name
+                        }
+
+            ${u.bought ? '（購入済）' : ''
+                        }
+
+            </div><div style="font-size:13px;color:var(--muted)">${u.desc
+                        }
+
+            </div></div><div style="text-align:right"><div style="font-size:13px;color:var(--muted)">価格</div><div style="font-weight:700">${formatNum(u.cost)
+                        }
+
+            Z</div><div style="margin-top:8px"><button class="buy-btn" data-upg="${u.id}"${u.bought || gameState.money < u.cost ? 'disabled' : ''
+                        }
+
+            >購入</button></div></div>`;
                     panel.appendChild(d);
                 }
             }
+
             container.innerHTML = '';
             container.appendChild(panel);
 
@@ -729,16 +1099,32 @@
         function buyUpgrade(id) {
             const u = upgrades.find(x => x.id === id);
             if (!u || u.bought) return;
+
             if (gameState.money >= u.cost) {
                 gameState.money -= u.cost;
                 u.bought = true;
-                try { u.apply(gameState); } catch (e) { console.error(e) }
+
+                try {
+                    u.apply(gameState);
+                }
+
+                catch (e) {
+                    console.error(e)
+                }
 
                 // 実績判定（アップグレードで条件が満たされる場合がある）
-                try { checkAchievements(); } catch (e) { console.error(e) }
+                try {
+                    checkAchievements();
+                }
+
+                catch (e) {
+                    console.error(e)
+                }
 
                 updateUI();
-            } else flashInsufficient();
+            }
+
+            else flashInsufficient();
         }
 
         /* ----- アーティファクト（スキルツリー） ----- */
@@ -756,6 +1142,7 @@
             defaultArtifacts.forEach(art => {
                 if (art.parent) {
                     const parent = defaultArtifacts.find(p => p.id === art.parent);
+
                     if (parent) {
                         const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
                         line.setAttribute('x1', parent.x + '%');
@@ -787,6 +1174,7 @@
 
                 // Determine state
                 let isLocked = false;
+
                 if (def.parent) {
                     const parent = artifacts.find(p => p.id === def.parent);
                     if (!parent || !parent.bought) isLocked = true;
@@ -794,9 +1182,13 @@
 
                 if (art.bought) {
                     el.classList.add('bought');
-                } else if (isLocked) {
+                }
+
+                else if (isLocked) {
                     el.classList.add('locked');
-                } else {
+                }
+
+                else {
                     el.classList.add('available');
                 }
 
@@ -806,15 +1198,29 @@
                 // Tooltip
                 el.onmouseenter = () => {
                     tooltip.style.display = 'block';
-                    tooltip.innerHTML = `
-                        <div style="font-weight:700;color:${art.bought ? '#7dd3fc' : '#fff'}">${def.name}</div>
-                        <div style="color:#ccc">${def.desc}</div>
-                        ${!art.bought ? `<div style="margin-top:4px;font-weight:700;color:${isLocked ? '#ef4444' : '#fbbf24'}">Cost: ${def.cost} Z</div>` : ''}
-                    `;
-                };
+
+                    tooltip.innerHTML = ` <div style="font-weight:700;color:${art.bought ? '#7dd3fc' : '#fff'}" >${def.name
+                        }
+
+                </div> <div style="color:#ccc" >${def.desc
+                        }
+
+                </div> ${!art.bought ? `<div style="margin-top:4px;font-weight:700;color:${isLocked ? '#ef4444' : '#fbbf24'}" >Cost: ${def.cost
+                            }
+
+                    Z</div>` : ''
+                        }
+
+                `;
+                }
+
+                    ;
+
                 el.onmouseleave = () => {
                     tooltip.style.display = 'none';
-                };
+                }
+
+                    ;
 
                 nodesContainer.appendChild(el);
             });
@@ -828,6 +1234,7 @@
             // Check parent
             if (def.parent) {
                 const parent = artifacts.find(p => p.id === def.parent);
+
                 if (!parent || !parent.bought) {
                     notify('親アーティファクトが必要です');
                     return;
@@ -837,10 +1244,23 @@
             if (gameState.money >= def.cost) {
                 gameState.money -= def.cost;
                 art.bought = true;
-                try { def.apply(gameState); } catch (e) { console.error(e); }
-                notify(`アーティファクト獲得: ${def.name}`);
+
+                try {
+                    def.apply(gameState);
+                }
+
+                catch (e) {
+                    console.error(e);
+                }
+
+                notify(`アーティファクト獲得: ${def.name
+                    }
+
+            `);
                 updateUI();
-            } else {
+            }
+
+            else {
                 flashInsufficient();
             }
         }
@@ -852,38 +1272,58 @@
 
             const panel = document.createElement('div');
             panel.id = 'achPanel';
+
             for (const a of achievements) {
                 const d = document.createElement('div');
                 d.className = 'ach ' + (a.rewarded ? 'unlocked' : 'locked');
-                d.innerHTML = `
-      <div>
-        <div style="font-weight:700">${a.name}</div>
-        <div style="font-size:13px;color:var(--muted)">${a.desc}</div>
-      </div>
-      <div style="text-align:right">
-        <div style="font-size:13px;color:${a.rewarded ? '#a6f3c5' : 'var(--muted)'}">${a.rewarded ? '獲得済' : '未達成'}</div>
-      </div>
-    `;
+
+                d.innerHTML = ` <div><div style="font-weight:700">${a.name
+                    }
+
+        </div><div style="font-size:13px;color:var(--muted)">${a.desc
+                    }
+
+        </div></div><div style="text-align:right"><div style="font-size:13px;color:${a.rewarded ? '#a6f3c5' : 'var(--muted)'}">${a.rewarded ? '獲得済' : '未達成'
+                    }
+
+        </div></div>`;
                 panel.appendChild(d);
             }
+
             container.innerHTML = '';
             container.appendChild(panel);
         }
 
         function checkAchievements() {
             let updated = false;
+
             for (const a of achievements) {
                 try {
                     if (!a.rewarded && a.condition(gameState)) {
                         a.rewarded = true;
-                        try { a.reward(gameState); } catch (e) { console.error(e) }
+
+                        try {
+                            a.reward(gameState);
+                        }
+
+                        catch (e) {
+                            console.error(e)
+                        }
+
                         updated = true;
-                        notify(`実績解除: ${a.name}`);
+
+                        notify(`実績解除: ${a.name
+                            }
+
+                    `);
                     }
-                } catch (e) {
+                }
+
+                catch (e) {
                     console.error('実績判定エラー', a.id, e);
                 }
             }
+
             if (updated) updateUI();
         }
 
@@ -903,7 +1343,12 @@
             n.style.fontWeight = '700';
             n.style.zIndex = '9999';
             document.body.appendChild(n);
-            setTimeout(() => { n.style.transition = 'all 360ms ease'; n.style.opacity = '0'; n.style.transform = 'translateY(20px)'; }, 2000);
+
+            setTimeout(() => {
+                n.style.transition = 'all 360ms ease'; n.style.opacity = '0'; n.style.transform = 'translateY(20px)';
+            }
+
+                , 2000);
             setTimeout(() => n.remove(), 2500);
         }
 
@@ -916,11 +1361,16 @@
                 artifacts,
                 achievements,
                 ts: Date.now()
-            };
+            }
+
+                ;
+
             try {
                 localStorage.setItem(GAME_SAVE_KEY, JSON.stringify(save));
                 notify('セーブしました');
-            } catch (e) {
+            }
+
+            catch (e) {
                 console.error('セーブ失敗', e);
                 notify('セーブに失敗しました');
             }
@@ -928,7 +1378,12 @@
 
         function loadGame(silent = false) {
             const raw = localStorage.getItem(GAME_SAVE_KEY);
-            if (!raw) { if (!silent) notify('セーブデータがありません'); return; }
+
+            if (!raw) {
+                if (!silent) notify('セーブデータがありません');
+                return;
+            }
+
             try {
                 const save = JSON.parse(raw);
 
@@ -941,50 +1396,95 @@
 
                 if (save.producers) {
                     producers = defaultProducers.map(d => {
-                        const s = (save.producers || []).find(x => x.id === d.id) || {};
-                        return Object.assign({}, d, { count: s.count ?? d.count });
+                        const s = (save.producers || []).find(x => x.id === d.id) || {}
+
+                            ;
+
+                        return Object.assign({}
+
+                            , d, {
+                            count: s.count ?? d.count
+                        });
                     });
                 }
 
                 if (save.upgrades) {
                     upgrades = defaultUpgrades.map(d => {
-                        const s = (save.upgrades || []).find(x => x.id === d.id) || {};
-                        return Object.assign({}, d, { bought: s.bought ?? d.bought });
+                        const s = (save.upgrades || []).find(x => x.id === d.id) || {}
+
+                            ;
+
+                        return Object.assign({}
+
+                            , d, {
+                            bought: s.bought ?? d.bought
+                        });
                     });
                 }
 
                 if (save.artifacts) {
                     artifacts = defaultArtifacts.map(d => {
-                        const s = (save.artifacts || []).find(x => x.id === d.id) || {};
-                        return Object.assign({}, d, { bought: s.bought ?? false });
+                        const s = (save.artifacts || []).find(x => x.id === d.id) || {}
+
+                            ;
+
+                        return Object.assign({}
+
+                            , d, {
+                            bought: s.bought ?? false
+                        });
                     });
                 }
 
                 if (save.achievements) {
                     achievements = defaultAchievements.map(d => {
-                        const s = (save.achievements || []).find(x => x.id === d.id) || {};
-                        return Object.assign({}, d, { rewarded: s.rewarded ?? d.rewarded });
+                        const s = (save.achievements || []).find(x => x.id === d.id) || {}
+
+                            ;
+
+                        return Object.assign({}
+
+                            , d, {
+                            rewarded: s.rewarded ?? d.rewarded
+                        });
                     });
                 }
 
                 // オフライン補填（保存時刻があれば差分を補填）
                 if (save.ts) {
                     const elapsedSec = Math.floor((Date.now() - save.ts) / 1000);
+
                     if (elapsedSec > 1) {
                         const prod = calcProdPerSecond();
                         const offlineGain = prod * elapsedSec;
                         gameState.money += offlineGain;
                         gameState.totalZ += offlineGain;
                         gameState.playTimeSec += elapsedSec;
-                        notify(`放置報酬: ${formatNum(offlineGain)} Z（${elapsedSec}s分）`);
+
+                        notify(`放置報酬: ${formatNum(offlineGain)
+                            }
+
+            Z（${elapsedSec
+                            }
+
+            s分）`);
+
                         // 補填後に実績判定
-                        try { checkAchievements(); } catch (e) { console.error(e) }
+                        try {
+                            checkAchievements();
+                        }
+
+                        catch (e) {
+                            console.error(e)
+                        }
                     }
                 }
 
                 updateUI();
                 if (!silent) notify('ロード完了');
-            } catch (e) {
+            }
+
+            catch (e) {
                 console.error(e);
                 notify('ロードに失敗しました');
             }
@@ -992,8 +1492,7 @@
 
         function resetGame() {
             const canReincarnate = gameState.money >= 1000000;
-            const msg = canReincarnate
-                ? '転生しますか？\n現在の所持金に応じて生産ボーナスを獲得し、強くてニューゲームします。'
+            const msg = canReincarnate ? '転生しますか？\n現在の所持金に応じて生産ボーナスを獲得し、強くてニューゲームします。'
                 : '本当にリセットしますか？ セーブは消えます。';
 
             if (!confirm(msg)) return;
@@ -1008,21 +1507,40 @@
                 const bonus = Math.sqrt(gameState.money / 1000000) * 0.1;
                 nextPrestige += bonus;
                 nextCount += 1;
-                notify(`転生完了！ ボーナス +${(bonus * 100).toFixed(1)}%`);
-            } else {
+
+                notify(`転生完了！ ボーナス +${(bonus * 100).toFixed(1)
+                    }
+
+            %`);
+            }
+
+            else {
                 notify('初期化しました');
             }
 
             // デフォルト定義からコピー（関数を保持）
-            producers = defaultProducers.map(p => ({ ...p }));
-            upgrades = defaultUpgrades.map(u => ({ ...u }));
-            artifacts = defaultArtifacts.map(a => ({ ...a, bought: false }));
+            producers = defaultProducers.map(p => ({
+                ...p
+            }));
+
+            upgrades = defaultUpgrades.map(u => ({
+                ...u
+            }));
+
+            artifacts = defaultArtifacts.map(a => ({
+                ...a, bought: false
+            }));
+
             // Achievements are NOT reset on reincarnation (usually) but here we follow simple logic:
             // If simple reset, wipe all. If reincarnation, maybe keep? 
             // For now, let's keep achievements on Reincarnation, wipe on Reset.
             if (!canReincarnate) {
-                achievements = defaultAchievements.map(a => ({ ...a }));
-            } else {
+                achievements = defaultAchievements.map(a => ({
+                    ...a
+                }));
+            }
+
+            else {
                 // Keep achievements but re-bind functions just in case
                 // Actually achievements state is in `achievements` array. 
                 // We need to ensure `condition` and `reward` functions are preserved if we loaded from JSON?
@@ -1031,16 +1549,22 @@
             }
 
             gameState = {
+
                 money: 0,
                 totalZ: 0,
                 clickPower: 1,
                 globalMultiplier: 1,
-                producerMultipliers: {},
-                playTimeSec: 0, // Maybe keep playTime? Let's reset for "run time"
+                producerMultipliers: {}
+
+                ,
+                playTimeSec: 0,
+                // Maybe keep playTime? Let's reset for "run time"
                 reincarnationCount: nextCount,
                 prestigeMultiplier: nextPrestige,
                 lastTick: Date.now()
-            };
+            }
+
+                ;
 
             saveGame(); // Save immediately
             updateUI();
@@ -1048,12 +1572,21 @@
 
         /* ----- ユーザー操作：クリックでZを獲得 ----- */
         const tapEl = document.getElementById('tapGain');
+
         if (tapEl) {
             tapEl.addEventListener('click', () => {
                 gameState.money += gameState.clickPower;
                 gameState.totalZ += gameState.clickPower;
+
                 // クリックで実績が変わる可能性があるためチェック
-                try { checkAchievements(); } catch (e) { console.error(e) }
+                try {
+                    checkAchievements();
+                }
+
+                catch (e) {
+                    console.error(e)
+                }
+
                 updateUI();
             });
         }
@@ -1061,6 +1594,7 @@
         /* ----- タブ切替処理（右カラム） ----- */
         let currentTab = 'mono';
         const tabButtons = document.querySelectorAll('.tab-btn');
+
         tabButtons.forEach(b => {
             b.addEventListener('click', () => {
                 tabButtons.forEach(bb => bb.classList.remove('active'));
@@ -1068,13 +1602,18 @@
                 currentTab = b.dataset.tab;
                 const content = document.getElementById('tabContent');
                 content.innerHTML = '';
+
                 if (currentTab === 'mono') {
                     const div = document.createElement('div'); div.id = 'monoPanel';
                     content.appendChild(div);
                     renderMonoPanel();
-                } else if (currentTab === 'chie') {
+                }
+
+                else if (currentTab === 'chie') {
                     renderChiePanel();
-                } else if (currentTab === 'ach') {
+                }
+
+                else if (currentTab === 'ach') {
                     renderAchPanel();
                 }
             });
@@ -1089,11 +1628,16 @@
         if (resetBtn) resetBtn.addEventListener('click', resetGame);
 
         /* ----- 自動セーブ（一定間隔） ----- */
-        setInterval(() => { saveGame(); }, 60000);
+        setInterval(() => {
+            saveGame();
+        }
+
+            , 60000);
 
         /* ----- メインループ（requestAnimationFrame） ----- */
         let lastTime = performance.now();
         let uiTimer = 0;
+
         function mainLoop(now) {
             const dtMs = now - lastTime;
             lastTime = now;
@@ -1101,6 +1645,7 @@
             tick(dt);
 
             uiTimer += dt;
+
             if (uiTimer >= 1.0) {
                 updateUI();
                 uiTimer = 0;
@@ -1111,10 +1656,10 @@
 
         /* ----- CodePenなどでrAFが止まった場合の補填（フォールバック） ----- */
         /*
-          rAF が停止している（/極端に間引かれている）環境では tick が呼ばれず放置分が失われる。
-          そこで tick が止まっている時間を _lastTickTime で判定し、setInterval でまとめて補填する。
-          - rAF が動いている場合（tickが更新しているとき）は何もしない（二重加算を防止）。
-        */
+                  rAF が停止している（/極端に間引かれている）環境では tick が呼ばれず放置分が失われる。
+                  そこで tick が止まっている時間を _lastTickTime で判定し、setInterval でまとめて補填する。
+                  - rAF が動いている場合（tickが更新しているとき）は何もしない（二重加算を防止）。
+                */
         setInterval(() => {
             const now = Date.now();
             const elapsed = (now - _lastTickTime) / 1000;
@@ -1124,15 +1669,33 @@
             // rAFが止まっている時間だけまとめて加算
             const prod = calcProdPerSecond();
             const gain = prod * elapsed;
+
             if (gain > 0) {
                 gameState.money += gain;
                 gameState.totalZ += gain;
                 gameState.playTimeSec += elapsed;
-                try { checkAchievements(); } catch (e) { console.error(e) }
-                try { updateUI(); } catch (e) { console.error(e) }
+
+                try {
+                    checkAchievements();
+                }
+
+                catch (e) {
+                    console.error(e)
+                }
+
+                try {
+                    updateUI();
+                }
+
+                catch (e) {
+                    console.error(e)
+                }
             }
+
             _lastTickTime = now;
-        }, 1000);
+        }
+
+            , 1000);
 
         /* ----- 初期化処理（起動時に一度だけ実行） ----- */
         (function init() {
@@ -1151,8 +1714,14 @@
             if (!el) return;
             el.style.transition = 'none';
             el.style.color = '#ffb4b4';
-            setTimeout(() => { el.style.transition = 'color 400ms'; el.style.color = '#fff' }, 220);
+
+            setTimeout(() => {
+                el.style.transition = 'color 400ms'; el.style.color = '#fff'
+            }
+
+                , 220);
         }
+
     </script>
 </body>
 
