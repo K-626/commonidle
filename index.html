@@ -594,7 +594,7 @@
                 g.producerMultipliers['farmer'] = (g.producerMultipliers['farmer'] || 1) * 6;
             }
         },
-        
+
         {
 
             id: 'clickserious',
@@ -603,7 +603,7 @@
             cost: 500000000,
             bought: false,
             apply: (g) => {
-                g.clickPower*=1000000000000000
+                g.clickPower *= 1000000000000000
             }
         }
 
@@ -685,6 +685,34 @@
             y: 20,
             parent: 'art_tablet',
             icon: '🤝',
+            apply: (g) => {
+                const v = producers.find(p => p.id === 'villager');
+                if (v) v.baseCost = v.baseCost * 0.00000000000001;
+            }
+        },
+        {
+            id: 'cropmajor',
+            name: '穀物メジャー',
+            desc: '村人のコストがめっちゃ減る',
+            cost: 25000000000000,
+            x: 90,
+            y: 40,
+            parent: 'art_coop',
+            icon: '🌾',
+            apply: (g) => {
+                const v = producers.find(p => p.id === 'villager');
+                if (v) v.baseCost = v.baseCost * 0.00000000000001;
+            }
+        },
+        {
+            id: 'populationinfration',
+            name: '人口爆発',
+            desc: '村人のコストがめっちゃ減る',
+            cost: 25000000000000000,
+            x: 90,
+            y: 60,
+            parent: 'cropmajor',
+            icon: '🌾',
             apply: (g) => {
                 const v = producers.find(p => p.id === 'villager');
                 if (v) v.baseCost = v.baseCost * 0.00000000000001;
