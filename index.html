@@ -4,7 +4,7 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>簡易放置ゲーム（Z）</title>
+    <title>ふつうの放置ゲーム</title>
     <style>
         :root {
             --bg: #0f1724;
@@ -154,7 +154,7 @@
             border-radius: 12px;
             padding: 16px;
             position: relative;
-            min-height: 300px;
+            min-height: 500px;
             overflow: hidden;
             border: 1px solid rgba(255, 255, 255, 0.05);
         }
@@ -432,6 +432,37 @@
         input:checked+.slider:before {
             transform: translateX(16px);
         }
+
+        /* Tree Tabs */
+        .tree-tabs {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .tree-tab {
+            padding: 4px 12px;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--muted);
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .tree-tab:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+        }
+
+        .tree-tab.active {
+            background: var(--accent);
+            color: #000;
+            border-color: var(--accent);
+            font-weight: 700;
+        }
     </style>
 </head>
 
@@ -458,6 +489,8 @@
                         </div>
                         <div style="font-size:12px;color:var(--muted)">転生ボーナス: <span id="prestigeMult">x1.00</span>
                         </div>
+                        <div style="font-size:12px;color:var(--muted)">転生ポイント: <span id="rpValue">0</span>
+                        </div>
                     </div>
                 </div>
                 <div class="card"><button id="saveBtn" class="buy-btn"
@@ -465,12 +498,37 @@
                         style="width:100%;margin-bottom:8px">ロード</button><button id="resetBtn" class="buy-btn"
                         style="width:100%;background:#7f1d1d;border-color:#7f1d1d">リセット</button></div>
                 <div class="card" id="automationPanel" style="display:none; margin-top:8px">
-                    <div style="display:flex; justify-content:space-between; align-items:center">
-                        <div style="font-size:13px; color:var(--accent)">自動購入</div>
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px">
+                        <div style="font-size:13px; color:var(--accent)">自動購入 (設備)</div>
                         <label class="toggle-switch">
                             <input type="checkbox" id="autoBuyToggle" checked>
                             <span class="slider"></span>
                         </label>
+                    </div>
+                    <!-- Auto Upgrade -->
+                    <div id="autoUpgradeRow"
+                        style="display:none; justify-content:space-between; align-items:center; margin-bottom:8px">
+                        <div style="font-size:13px; color:var(--accent)">自動購入 (知恵)</div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="autoUpgradeToggle">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <!-- Auto Reincarnate -->
+                    <div id="autoReincarnateRow" style="display:none; flex-direction:column; gap:6px">
+                        <div style="display:flex; justify-content:space-between; align-items:center">
+                            <div style="font-size:13px; color:#f59e0b">自動転生</div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="autoReincarnateToggle">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                        <div style="display:flex; gap:8px; align-items:center">
+                            <div style="font-size:12px; color:var(--muted)">閾値Z:</div>
+                            <input type="number" id="autoReincarnateInput"
+                                style="width:100%; background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.1); color:#fff; border-radius:4px; padding:4px;"
+                                placeholder="例: 100000000">
+                        </div>
                     </div>
                 </div>
             </div>
@@ -490,8 +548,12 @@
                 </div>
             </div><!-- Artifact Tree Section -->
             <div class="artifact-panel" id="artifactPanel">
-                <h4 style="margin:0 0 12px 0; text-align:center; color:var(--muted)">アーティファクト</h4><svg
-                    class="artifact-tree-svg" id="treeSvg"></svg>
+                <div class="tree-tabs">
+                    <div class="tree-tab active" data-tree="1">基本</div>
+                    <div class="tree-tab" data-tree="2">発展</div>
+                    <div class="tree-tab" data-tree="3">超越</div>
+                </div>
+                <svg class="artifact-tree-svg" id="treeSvg"></svg>
                 <div id="treeNodes"></div>
                 <div class="artifact-tooltip" id="artifactTooltip"></div>
             </div>
@@ -505,8 +567,10 @@
             <div class="tab-content" id="tabContent"><!-- default: モノ -->
                 <div id="monoPanel"></div>
             </div>
-            <div style="display:flex;gap:8px">
+            <div style="display:flex;gap:8px;align-items:center">
                 <div style="flex:1" class="small">バージョン: 1.0 · 保存はブラウザに保持</div>
+                <div class="small" style="color:#ef4444;cursor:pointer;text-decoration:underline" id="deleteDataBtn">
+                    データ削除</div>
             </div>
         </div>
     </div>
@@ -610,95 +674,93 @@
         ];
 
         const defaultArtifacts = [{
-
             id: 'art_tablet',
             name: '古代の石板',
             desc: '生産効率 +10000%',
-            cost: 100,
+            cost: 1,
+            currency: 'RP',
             x: 50,
             y: 20,
             parent: null,
             icon: '📜',
+            treeId: 1,
             apply: (g) => {
                 g.globalMultiplier *= 101;
             }
-        }
-
-            ,
+        },
         {
-
             id: 'art_stone',
             name: '石の道具',
             desc: 'クリック +500',
-            cost: 500,
+            cost: 1,
+            currency: 'RP',
             x: 30,
             y: 50,
             parent: 'art_tablet',
             icon: '🪨',
+            treeId: 1,
             apply: (g) => {
                 g.clickPower += 500;
             }
-        }
-
-            ,
+        },
         {
-
             id: 'art_irrig',
             name: '灌漑',
             desc: '農夫の生産 +5000%',
-            cost: 1000,
+            cost: 1,
+            currency: 'RP',
             x: 70,
             y: 50,
             parent: 'art_tablet',
             icon: '💧',
+            treeId: 1,
             apply: (g) => {
-                if (!g.producerMultipliers) g.producerMultipliers = {}
-
-                    ;
+                if (!g.producerMultipliers) g.producerMultipliers = {};
                 g.producerMultipliers['farmer'] = (g.producerMultipliers['farmer'] || 1) * 51;
             }
-        }
-
-            ,
+        },
         {
-
             id: 'art_iron',
             name: '鉄の道具',
             desc: 'クリック +1000',
-            cost: 2000,
+            cost: 1,
+            currency: 'RP',
             x: 20,
             y: 80,
             parent: 'art_stone',
             icon: '⚔️',
+            treeId: 1,
             apply: (g) => {
                 g.clickPower += 1000;
             }
-        }
-
-            ,
+        },
         {
             id: 'art_coop',
             name: '農業協同組合',
-            desc: '村人のコストがめっちゃ減る',
-            cost: 25000,
+            desc: '村人のコストがめっちゃ減るになる',
+            cost: 1,
+            currency: 'RP',
             x: 80,
             y: 20,
             parent: 'art_tablet',
             icon: '🤝',
+            treeId: 1,
             apply: (g) => {
                 const v = producers.find(p => p.id === 'villager');
-                if (v) v.baseCost = v.baseCost * 0.00000000000001;
+                if (v) v.baseCost = v.baseCost * 0.0000000000001;
             }
         },
         {
             id: 'cropmajor',
             name: '穀物メジャー',
             desc: '村人のコストがめっちゃ減る',
-            cost: 25000000000000,
+            cost: 1,
+            currency: 'RP',
             x: 90,
             y: 40,
             parent: 'art_coop',
-            icon: '🌾',
+            icon: '🤝',
+            treeId: 1,
             apply: (g) => {
                 const v = producers.find(p => p.id === 'villager');
                 if (v) v.baseCost = v.baseCost * 0.00000000000001;
@@ -708,44 +770,45 @@
             id: 'populationinfration',
             name: '人口爆発',
             desc: '村人のコストがめっちゃ減る',
-            cost: 25000000000000000,
+            cost: 1,
+            currency: 'RP',
             x: 90,
             y: 60,
             parent: 'cropmajor',
-            icon: '🌾',
+            icon: '🤝',
+            treeId: 1,
             apply: (g) => {
                 const v = producers.find(p => p.id === 'villager');
-                if (v) v.baseCost = v.baseCost * 0.00000000000001;
+                if (v) v.baseCost = v.baseCost * 0.000000000000000001;
             }
-        }
-
-            ,
+        },
         {
-
             id: 'art_crop',
             name: '輪作',
             desc: '農夫の生産 +10000%',
-            cost: 5000,
+            cost: 1,
+            currency: 'RP',
             x: 80,
             y: 80,
             parent: 'art_irrig',
             icon: '🔄',
+            treeId: 1,
             apply: (g) => {
-                if (!g.producerMultipliers) g.producerMultipliers = {}
-
-                    ;
+                if (!g.producerMultipliers) g.producerMultipliers = {};
                 g.producerMultipliers['farmer'] = (g.producerMultipliers['farmer'] || 1) * 101;
             }
         },
         {
             id: 'art_manager',
-            name: 'しんぎゅらりてぃ？',
-            desc: '最も生産が高い設備を自動で購入 ',
-            cost: 50000,
+            name: '自動化の歯車',
+            desc: '最も生産が高い設備を自動で購入 / On/Off可能',
+            cost: 5,
+            currency: 'RP',
             x: 50,
             y: 80,
             parent: 'art_iron',
             icon: '⚙️',
+            treeId: 1,
             apply: (g) => {
                 g.autoBuy = true;
             }
@@ -754,19 +817,80 @@
             id: 'haguruma',
             name: '歯車',
             desc: '工場の生産が10000倍',
-            cost: 50000000,
+            cost: 1,
+            currency: 'RP',
             x: 50,
             y: 50,
             parent: 'art_manager',
             icon: '⚙️',
+            treeId: 1,
             apply: (g) => {
-                if (!g.producerMultipliers) g.producerMultipliers = {}
-
-                    ;
+                if (!g.producerMultipliers) g.producerMultipliers = {};
                 g.producerMultipliers['factory'] = (g.producerMultipliers['factory'] || 1) * 10001;
             }
-        }
-        ];
+        },
+        // Tree 2
+        {
+            id: 'art_tree2_root',
+            name: '産業革命',
+            desc: '工場の生産 +100%',
+            cost: 1,
+            currency: 'RP',
+            x: 50,
+            y: 20,
+            parent: null,
+            icon: '🏭',
+            treeId: 2,
+            apply: (g) => {
+                if (!g.producerMultipliers) g.producerMultipliers = {};
+                g.producerMultipliers['factory'] = (g.producerMultipliers['factory'] || 1) * 2;
+            }
+        },
+        {
+            id: 'art_screw',
+            name: '自動化のネジ',
+            desc: '知恵（アップグレード）も自動で購入 / On/Off可能',
+            cost: 1,
+            currency: 'RP',
+            x: 50,
+            y: 50,
+            parent: 'art_tree2_root',
+            icon: '🔩',
+            treeId: 2,
+            apply: (g) => {
+                g.autoUpgrade = true;
+            }
+        },
+        // Tree 3
+        {
+            id: 'art_tree3_root',
+            name: 'デジタル化',
+            desc: '全生産 +200%',
+            cost: 1,
+            x: 50,
+            y: 20,
+            parent: null,
+            icon: '💻',
+            treeId: 3,
+            apply: (g) => {
+                g.globalMultiplier *= 3;
+            }
+        },
+        {
+            id: 'art_stone_phi',
+            name: '賢者の石',
+            desc: '設定した金額で自動転生する / On/Off可能',
+            cost: 1,
+            currency: 'RP',
+            x: 50,
+            y: 50,
+            parent: 'art_tree3_root',
+            icon: '🔮',
+            treeId: 3,
+            apply: (g) => {
+                g.autoReincarnate = true;
+            }
+        }];
 
         const defaultAchievements = [{
 
@@ -855,7 +979,13 @@
             playTimeSec: 0,
             reincarnationCount: 0,
             prestigeMultiplier: 1.0,
+            reincarnationPoints: 0,
             autoBuyActive: true,
+            autoUpgrade: false,
+            autoUpgradeActive: false,
+            autoReincarnate: false,
+            autoReincarnateActive: false,
+            autoReincarnateThreshold: 0,
             lastTick: Date.now()
         }
 
@@ -961,30 +1091,73 @@
             if (elRein) elRein.textContent = gameState.reincarnationCount || 0;
             const elPrestige = document.getElementById('prestigeMult');
             if (elPrestige) elPrestige.textContent = 'x' + (gameState.prestigeMultiplier || 1).toFixed(2);
+            const elRP = document.getElementById('rpValue');
+            if (elRP) elRP.textContent = gameState.reincarnationPoints || 0;
 
             // Auto Buy Toggle
             const autoPanel = document.getElementById('automationPanel');
             const autoToggle = document.getElementById('autoBuyToggle');
+            const autoUpRow = document.getElementById('autoUpgradeRow');
+            const autoUpToggle = document.getElementById('autoUpgradeToggle');
+            const autoReincRow = document.getElementById('autoReincarnateRow');
+            const autoReincToggle = document.getElementById('autoReincarnateToggle');
+            const autoReincInput = document.getElementById('autoReincarnateInput');
 
-            if (autoPanel && autoToggle) {
+            if (autoPanel) {
+                let show = false;
                 if (gameState.autoBuy) {
-                    autoPanel.style.display = 'block';
-
-                    if (!autoToggle._init) {
-                        autoToggle.addEventListener('change', (e) => {
-                            gameState.autoBuyActive = e.target.checked;
-                        });
-                        autoToggle._init = true;
+                    show = true;
+                    if (autoToggle) {
+                        if (!autoToggle._init) {
+                            autoToggle.addEventListener('change', (e) => gameState.autoBuyActive = e.target.checked);
+                            autoToggle._init = true;
+                        }
+                        if (autoToggle.checked !== !!gameState.autoBuyActive) autoToggle.checked = !!gameState.autoBuyActive;
                     }
-
-                    // Sync UI to state (allow user to toggle freely, but ensure state is respected)
-                    if (autoToggle.checked !== !!gameState.autoBuyActive) {
-                        autoToggle.checked = !!gameState.autoBuyActive;
-                    }
-
-                } else {
-                    autoPanel.style.display = 'none';
                 }
+
+                if (gameState.autoUpgrade) {
+                    show = true;
+                    if (autoUpRow) autoUpRow.style.display = 'flex';
+                    if (autoUpToggle) {
+                        if (!autoUpToggle._init) {
+                            autoUpToggle.addEventListener('change', (e) => gameState.autoUpgradeActive = e.target.checked);
+                            autoUpToggle._init = true;
+                        }
+                        if (autoUpToggle.checked !== !!gameState.autoUpgradeActive) autoUpToggle.checked = !!gameState.autoUpgradeActive;
+                    }
+                } else {
+                    if (autoUpRow) autoUpRow.style.display = 'none';
+                }
+
+                if (gameState.autoReincarnate) {
+                    show = true;
+                    if (autoReincRow) autoReincRow.style.display = 'flex';
+                    if (autoReincToggle) {
+                        if (!autoReincToggle._init) {
+                            autoReincToggle.addEventListener('change', (e) => gameState.autoReincarnateActive = e.target.checked);
+                            autoReincToggle._init = true;
+                        }
+                        if (autoReincToggle.checked !== !!gameState.autoReincarnateActive) autoReincToggle.checked = !!gameState.autoReincarnateActive;
+                    }
+                    if (autoReincInput) {
+                        if (!autoReincInput._init) {
+                            autoReincInput.addEventListener('change', (e) => {
+                                const val = parseFloat(e.target.value);
+                                gameState.autoReincarnateThreshold = isFinite(val) ? val : 0;
+                            });
+                            autoReincInput._init = true;
+                        }
+                        // Only update input value if it's not focused to avoid annoying user while typing
+                        if (document.activeElement !== autoReincInput) {
+                            autoReincInput.value = gameState.autoReincarnateThreshold || '';
+                        }
+                    }
+                } else {
+                    if (autoReincRow) autoReincRow.style.display = 'none';
+                }
+
+                autoPanel.style.display = show ? 'block' : 'none';
             }
 
             // Reset Button Text
@@ -1023,7 +1196,6 @@
             gameState.playTimeSec += dt;
 
             // Auto Buy Logic
-            // Auto Buy Logic
             if (gameState.autoBuy && gameState.autoBuyActive) {
                 // Prioritize highest tier affordable
                 for (let i = producers.length - 1; i >= 0; i--) {
@@ -1032,6 +1204,23 @@
                         buyProducer(p.id);
                         break; // Buy only one per tick to respect priority
                     }
+                }
+            }
+
+            // Auto Upgrade Logic
+            if (gameState.autoUpgrade && gameState.autoUpgradeActive) {
+                // Try to buy unbought upgrades if affordable
+                for (const u of upgrades) {
+                    if (!u.bought && gameState.money >= u.cost) {
+                        buyUpgrade(u.id);
+                    }
+                }
+            }
+
+            // Auto Reincarnate Logic
+            if (gameState.autoReincarnate && gameState.autoReincarnateActive && gameState.autoReincarnateThreshold > 0) {
+                if (gameState.money >= gameState.autoReincarnateThreshold && gameState.money >= 1000000) {
+                    resetGame();
                 }
             }
 
@@ -1201,20 +1390,37 @@
         }
 
         /* ----- アーティファクト（スキルツリー） ----- */
+        let currentTreeId = 1;
+
         function renderArtifactTree() {
             const svg = document.getElementById('treeSvg');
             const nodesContainer = document.getElementById('treeNodes');
             const tooltip = document.getElementById('artifactTooltip');
             if (!svg || !nodesContainer) return;
 
+            // Tabs handling
+            document.querySelectorAll('.tree-tab').forEach(t => {
+                const tid = parseInt(t.dataset.tree);
+                if (tid === currentTreeId) t.classList.add('active');
+                else t.classList.remove('active');
+
+                t.onclick = () => {
+                    currentTreeId = tid;
+                    renderArtifactTree();
+                }
+            });
+
+            // Filter artifacts
+            const treeArtifacts = defaultArtifacts.filter(a => (a.treeId || 1) === currentTreeId);
+
             // Clear previous
             svg.innerHTML = '';
             nodesContainer.innerHTML = '';
 
             // Draw connections
-            defaultArtifacts.forEach(art => {
+            treeArtifacts.forEach(art => {
                 if (art.parent) {
-                    const parent = defaultArtifacts.find(p => p.id === art.parent);
+                    const parent = treeArtifacts.find(p => p.id === art.parent);
 
                     if (parent) {
                         const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
@@ -1237,8 +1443,8 @@
             });
 
             // Draw nodes
-            artifacts.forEach(art => {
-                const def = defaultArtifacts.find(d => d.id === art.id);
+            treeArtifacts.forEach(art => {
+                const def = art; // alias for clarity
                 const el = document.createElement('div');
                 el.className = 'artifact-node';
                 el.style.left = def.x + '%';
@@ -1246,54 +1452,39 @@
                 el.textContent = def.icon;
 
                 // Determine state
+                const artState = artifacts.find(a => a.id === def.id);
+                const isBought = artState && artState.bought;
                 let isLocked = false;
 
                 if (def.parent) {
-                    const parent = artifacts.find(p => p.id === def.parent);
-                    if (!parent || !parent.bought) isLocked = true;
+                    const parentState = artifacts.find(p => p.id === def.parent);
+                    if (!parentState || !parentState.bought) isLocked = true;
                 }
 
-                if (art.bought) {
+                if (isBought) {
                     el.classList.add('bought');
-                }
-
-                else if (isLocked) {
+                } else if (isLocked) {
                     el.classList.add('locked');
-                }
-
-                else {
+                } else {
                     el.classList.add('available');
                 }
 
                 // Interaction
-                el.onclick = () => buyArtifact(art.id);
+                el.onclick = () => buyArtifact(def.id);
 
                 // Tooltip
                 el.onmouseenter = () => {
+                    const costText = def.currency === 'RP' ? `${def.cost} RP` : `${formatNum(def.cost)} Z`;
                     tooltip.style.display = 'block';
-
-                    tooltip.innerHTML = ` <div style="font-weight:700;color:${art.bought ? '#7dd3fc' : '#fff'}" >${def.name
-                        }
-
-                </div> <div style="color:#ccc" >${def.desc
-                        }
-
-                </div> ${!art.bought ? `<div style="margin-top:4px;font-weight:700;color:${isLocked ? '#ef4444' : '#fbbf24'}" >Cost: ${def.cost
-                            }
-
-                    Z</div>` : ''
-                        }
-
-                `;
-                }
-
-                    ;
-
+                    tooltip.innerHTML = `
+                        <div style="font-weight:700;color:${isBought ? '#7dd3fc' : '#fff'}">${def.name}</div>
+                        <div style="color:#ccc">${def.desc}</div>
+                        ${!isBought ? `<div style="margin-top:4px;font-weight:700;color:${isLocked ? '#ef4444' : '#fbbf24'}">Cost: ${costText}</div>` : ''}
+                    `;
+                };
                 el.onmouseleave = () => {
                     tooltip.style.display = 'none';
-                }
-
-                    ;
+                };
 
                 nodesContainer.appendChild(el);
             });
@@ -1314,8 +1505,28 @@
                 }
             }
 
-            if (gameState.money >= def.cost) {
-                gameState.money -= def.cost;
+            const currency = def.currency || 'Z';
+            const cost = def.cost;
+
+            if (currency === 'RP') {
+                if ((gameState.reincarnationPoints || 0) >= cost) {
+                    gameState.reincarnationPoints = (gameState.reincarnationPoints || 0) - cost;
+                    art.bought = true;
+                    try {
+                        def.apply(gameState);
+                    } catch (e) {
+                        console.error(e);
+                    }
+                    notify(`アーティファクト獲得: ${def.name}`);
+                    updateUI();
+                } else {
+                    notify('転生ポイントが足りません');
+                }
+                return;
+            }
+
+            if (gameState.money >= cost) {
+                gameState.money -= cost;
                 art.bought = true;
 
                 try {
@@ -1465,6 +1676,10 @@
                     // Ensure new fields exist
                     if (typeof gameState.reincarnationCount === 'undefined') gameState.reincarnationCount = 0;
                     if (typeof gameState.prestigeMultiplier === 'undefined') gameState.prestigeMultiplier = 1.0;
+                    if (typeof gameState.reincarnationPoints === 'undefined') gameState.reincarnationPoints = 0;
+                    if (typeof gameState.autoUpgradeActive === 'undefined') gameState.autoUpgradeActive = false;
+                    if (typeof gameState.autoReincarnateActive === 'undefined') gameState.autoReincarnateActive = false;
+                    if (typeof gameState.autoReincarnateThreshold === 'undefined') gameState.autoReincarnateThreshold = 0;
                 }
 
                 if (save.producers) {
@@ -1565,13 +1780,18 @@
 
         function resetGame() {
             const canReincarnate = gameState.money >= 1000000;
-            const msg = canReincarnate ? '転生しますか？\n現在の所持金に応じて生産ボーナスを獲得し、強くてニューゲームします。'
-                : '本当にリセットしますか？ セーブは消えます。';
-
-            if (!confirm(msg)) return;
+            // Bypass confirm for Reincarnation (User request/Testing convenience)
+            // Just prompt for Hard Reset
+            if (!canReincarnate) {
+                if (!confirm('本当にリセットしますか？ セーブは消えます。')) return;
+            } else {
+                // Optional: confirm for Reincarnation? User said "resetGame to PRESERVE...". 
+                // Let's keep it smoother.
+            }
 
             let nextPrestige = gameState.prestigeMultiplier || 1.0;
             let nextCount = gameState.reincarnationCount || 0;
+            let nextRP = gameState.reincarnationPoints || 0;
 
             if (canReincarnate) {
                 // Formula: +10% per sqrt(1M)
@@ -1580,11 +1800,9 @@
                 const bonus = Math.sqrt(gameState.money / 1000000) * 0.1;
                 nextPrestige += bonus;
                 nextCount += 1;
+                nextRP += 1;
 
-                notify(`転生完了！ ボーナス +${(bonus * 100).toFixed(1)
-                    }
-
-            %`);
+                notify(`転生完了！ ボーナス +${(bonus * 100).toFixed(1)}% / RP +1`);
             }
 
             else {
@@ -1600,44 +1818,71 @@
                 ...u
             }));
 
-            artifacts = defaultArtifacts.map(a => ({
-                ...a, bought: false
+            // Only reset artifacts on HARD RESET -> Now handled by deleteGame. 
+            // Here we KEEP artifacts.
+            // if (!canReincarnate) ... -> REMOVED persistence check. Always keep.
+
+            upgrades = defaultUpgrades.map(u => ({
+                ...u
             }));
 
-            // Achievements are NOT reset on reincarnation (usually) but here we follow simple logic:
-            // If simple reset, wipe all. If reincarnation, maybe keep? 
-            // For now, let's keep achievements on Reincarnation, wipe on Reset.
-            // Achievements are reset on both Reset and Reincarnation as per request
+            // PERSISTENCE: Artifacts are preserved on Reincarnation AND basic Reset.
+            // They are only wiped via "Delete Data" (Hard Reset).
+            // So we do NOT map from defaultArtifacts here. We keep the existing `artifacts` array.
+            // However, we must ensure that we don't carry over buggy states, but 'bought' status should be kept.
+            // If the array is empty (first run logic handled in init), but here `artifacts` exists.
+
+            // Re-apply artifacts logic (in case they have passive effects that need re-triggering)
+            // But wait, `gameState` is reset below.
+
+            // Achievements are reset on both Reset and Reincarnation as per request (or maybe we should keep them too? User said 'Basic' too. Let's keep them?)
+            // "Enable Skill Tree persistence... " -> specifically skill tree.
+            // "Achievements... reset on reincarnation" -> previous request.
+            // Let's stick to: Artifacts KP, Achievements Reset.
             achievements = defaultAchievements.map(a => ({
                 ...a,
                 rewarded: false // Explicitly reset
             }));
 
-            if (canReincarnate) {
-                // Keep stats if needed or handled above
-            }
-
+            // Persistence for automation settings
+            const keepAutoBuy = gameState.autoBuyActive;
+            const keepAutoUpgrade = gameState.autoUpgradeActive;
+            const keepAutoReincarnate = gameState.autoReincarnateActive;
+            const keepThreshold = gameState.autoReincarnateThreshold;
 
             gameState = {
-
                 money: 0,
                 totalZ: 0,
                 clickPower: 1,
                 globalMultiplier: 1,
-                producerMultipliers: {}
-
-                ,
+                producerMultipliers: {},
                 playTimeSec: 0,
-                // Maybe keep playTime? Let's reset for "run time"
                 reincarnationCount: nextCount,
                 prestigeMultiplier: nextPrestige,
+                reincarnationPoints: nextRP,
+                autoBuyActive: keepAutoBuy,
+                autoUpgradeActive: keepAutoUpgrade,
+                autoReincarnateActive: keepAutoReincarnate,
+                autoReincarnateThreshold: keepThreshold,
                 lastTick: Date.now()
-            }
+            };
 
-                ;
+            // Re-apply artifacts effects to the new GameState
+            artifacts.forEach(a => {
+                if (a.bought) {
+                    const def = defaultArtifacts.find(d => d.id === a.id);
+                    if (def && def.apply) def.apply(gameState);
+                }
+            });
 
             saveGame(); // Save immediately
             updateUI();
+        }
+
+        function deleteGame() {
+            if (!confirm('本当に全てのデータを削除しますか？\n（スキルツリーや転生ポイントも全て消えます）')) return;
+            localStorage.removeItem(GAME_SAVE_KEY);
+            location.reload();
         }
 
         /* ----- ユーザー操作：クリックでZを獲得 ----- */
@@ -1696,6 +1941,8 @@
         if (loadBtn) loadBtn.addEventListener('click', () => loadGame(false));
         const resetBtn = document.getElementById('resetBtn');
         if (resetBtn) resetBtn.addEventListener('click', resetGame);
+        const delBtn = document.getElementById('deleteDataBtn');
+        if (delBtn) delBtn.addEventListener('click', deleteGame);
 
         /* ----- 自動セーブ（一定間隔） ----- */
         setInterval(() => {
@@ -1774,6 +2021,13 @@
 
             // 初回UI更新
             updateUI();
+
+            // Expose for debugging/testing
+            window.gameState = gameState;
+            window.updateUI = updateUI;
+            window.producers = producers;
+            window.artifacts = artifacts;
+
             // メインループ開始
             requestAnimationFrame(mainLoop);
         })();
