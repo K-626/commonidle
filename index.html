@@ -551,7 +551,7 @@
                 <div class="tree-tabs">
                     <div class="tree-tab active" data-tree="1">基本</div>
                     <div class="tree-tab" data-tree="2">発展</div>
-                    <div class="tree-tab" data-tree="3">超越</div>
+                    <div class="tree-tab" data-tree="3">挑戦</div>
                 </div>
                 <svg class="artifact-tree-svg" id="treeSvg"></svg>
                 <div id="treeNodes"></div>
@@ -754,7 +754,7 @@
             id: 'cropmajor',
             name: '穀物メジャー',
             desc: '村人のコストがめっちゃ減る',
-            cost: 100,
+            cost: 1,
             currency: 'RP',
             x: 90,
             y: 40,
@@ -770,7 +770,7 @@
             id: 'populationinfration',
             name: '人口爆発',
             desc: '村人のコストがめっちゃ減る',
-            cost: 1000,
+            cost: 1,
             currency: 'RP',
             x: 90,
             y: 60,
@@ -863,30 +863,16 @@
         },
         // Tree 3
         {
-            id: 'art_tree3_root',
-            name: 'デジタル化',
-            desc: '全生産 +200%',
-            cost: 1,
-            x: 50,
-            y: 20,
-            parent: null,
-            icon: '💻',
-            treeId: 3,
-            apply: (g) => {
-                g.globalMultiplier *= 3;
-            }
-        },
-        {
             id: 'art_stone_phi',
             name: '賢者の石',
             desc: '設定した金額で自動転生する / On/Off可能',
             cost: 1,
             currency: 'RP',
             x: 50,
-            y: 50,
-            parent: 'art_tree3_root',
+            y: 80,
+            parent: 'art_screw',
             icon: '🔮',
-            treeId: 3,
+            treeId: 2,
             apply: (g) => {
                 g.autoReincarnate = true;
             }
@@ -948,6 +934,31 @@
 
         ];
 
+        const defaultChallenges = [
+            {
+                id: 'c_domain',
+                name: '領域展開',
+                desc: '100回転生する',
+                condition: (g) => g.reincarnationCount >= 100,
+                rewardMP: 10,
+                cleared: false
+            },
+            {
+                id: 'c_villager',
+                name: '村人の始まり',
+                desc: '村人のみ購入して所持金 1e+15 に到達',
+                condition: (g) => {
+                    if (g.money < 1e15) return false;
+                    const v = producers.find(p => p.id === 'villager');
+                    if (!v || v.count === 0) return false;
+                    const others = producers.filter(p => p.id !== 'villager');
+                    return others.every(p => p.count === 0);
+                },
+                rewardMP: 50,
+                cleared: false
+            }
+        ];
+
         /* ----- ゲーム状態（可変） ----- */
 
         // 関数を保ったままコピーする（JSON系は関数を消すので使わない）
@@ -959,6 +970,10 @@
             ...u
         }));
 
+        let challenges = defaultChallenges.map(c => ({
+            ...c
+        }));
+
         let artifacts = defaultArtifacts.map(a => ({
             ...a, bought: false
         }));
@@ -967,9 +982,12 @@
             ...a
         }));
 
+
+
         let gameState = {
 
             money: 0,
+            mp: 0,
             totalZ: 0,
             clickPower: 1,
             globalMultiplier: 1,
@@ -1225,6 +1243,7 @@
             }
 
             checkAchievements();
+            checkChallenges();
         }
 
         /* ----- モノ（プロデューサ）パネルの描画と購入処理 ----- */
@@ -1409,6 +1428,11 @@
                     renderArtifactTree();
                 }
             });
+
+            if (currentTreeId === 3) {
+                renderChallengePanel();
+                return;
+            }
 
             // Filter artifacts
             const treeArtifacts = defaultArtifacts.filter(a => (a.treeId || 1) === currentTreeId);
@@ -1609,6 +1633,56 @@
             }
 
             if (updated) updateUI();
+        }
+
+        /* ----- 挑戦（チャレンジ）システム ----- */
+        function checkChallenges() {
+            let updated = false;
+            for (const c of challenges) {
+                if (!c.cleared && c.condition(gameState)) {
+                    c.cleared = true;
+                    gameState.mp = (gameState.mp || 0) + c.rewardMP;
+                    notify(`挑戦クリア: ${c.name} (+${c.rewardMP} MP)`);
+                    updated = true;
+                }
+            }
+            if (updated) updateUI();
+        }
+
+        function renderChallengePanel() {
+            const container = document.getElementById('treeNodes');
+            const svg = document.getElementById('treeSvg');
+            if (!container || !svg) return;
+
+            // Clear SVG lines for challenge tab
+            svg.innerHTML = '';
+
+            // Render Challenge UI
+            let html = `
+                <div style="width:100%; height:100%; overflow-y:auto; padding:10px;">
+                    <div style="text-align:center; margin-bottom:16px; font-size:18px; font-weight:bold; color:#d8b4fe">
+                        現在のMP: ${gameState.mp || 0}
+                    </div>
+                    <div style="display:flex; flex-direction:column; gap:12px;">
+            `;
+
+            for (const c of challenges) {
+                html += `
+                    <div style="background:rgba(255,255,255,0.05); border:1px solid ${c.cleared ? '#d8b4fe' : 'rgba(255,255,255,0.1)'}; border-radius:8px; padding:12px; display:flex; justify-content:space-between; align-items:center;">
+                        <div>
+                            <div style="font-weight:700; color:${c.cleared ? '#d8b4fe' : '#fff'}">${c.name}</div>
+                            <div style="font-size:12px; color:#aaa">${c.desc}</div>
+                        </div>
+                        <div style="text-align:right;">
+                            <div style="font-size:14px; font-weight:bold; color:#d8b4fe">${c.rewardMP} MP</div>
+                            <div style="font-size:12px; color:${c.cleared ? '#d8b4fe' : '#666'}">${c.cleared ? 'クリア済' : '未達成'}</div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            html += `</div></div>`;
+            container.innerHTML = html;
         }
 
         /* ----- 通知 ----- */
