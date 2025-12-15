@@ -4,7 +4,7 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>ふつうの放置ゲーム</title>
+    <title>簡易放置ゲーム（Z）</title>
     <style>
         :root {
             --bg: #0f1724;
@@ -600,6 +600,15 @@
             ,
         {
             id: 'factory', name: '工場', baseCost: 20000, costMult: 1.17, baseProd: 1200, count: 0, icon: '🏭'
+        },
+        {
+            id: 'coal_mine', name: '炭鉱', baseCost: 400000, costMult: 1.18, baseProd: 8000, count: 0, icon: '⚒️'
+        },
+        {
+            id: 'steam_engine', name: '蒸気機関', baseCost: 10000000, costMult: 1.20, baseProd: 150000, count: 0, icon: '🚂'
+        },
+        {
+            id: 'oil_field', name: '油田', baseCost: 500000000, costMult: 1.22, baseProd: 5000000, count: 0, icon: '🛢️'
         }
 
         ];
@@ -680,7 +689,7 @@
             cost: 1,
             currency: 'RP',
             x: 50,
-            y: 20,
+            y: 15,
             parent: null,
             icon: '📜',
             treeId: 1,
@@ -694,8 +703,8 @@
             desc: 'クリック +500',
             cost: 1,
             currency: 'RP',
-            x: 30,
-            y: 50,
+            x: 35,
+            y: 30,
             parent: 'art_tablet',
             icon: '🪨',
             treeId: 1,
@@ -709,9 +718,9 @@
             desc: '農夫の生産 +5000%',
             cost: 1,
             currency: 'RP',
-            x: 70,
+            x: 55,
             y: 50,
-            parent: 'art_tablet',
+            parent: 'art_coop',
             icon: '💧',
             treeId: 1,
             apply: (g) => {
@@ -725,8 +734,8 @@
             desc: 'クリック +1000',
             cost: 1,
             currency: 'RP',
-            x: 20,
-            y: 80,
+            x: 25,
+            y: 50,
             parent: 'art_stone',
             icon: '⚔️',
             treeId: 1,
@@ -740,8 +749,8 @@
             desc: '村人のコストがめっちゃ減るになる',
             cost: 1,
             currency: 'RP',
-            x: 80,
-            y: 20,
+            x: 65,
+            y: 30,
             parent: 'art_tablet',
             icon: '🤝',
             treeId: 1,
@@ -756,7 +765,7 @@
             desc: '村人のコストがめっちゃ減る',
             cost: 1,
             currency: 'RP',
-            x: 90,
+            x: 85,
             y: 40,
             parent: 'art_coop',
             icon: '🤝',
@@ -788,8 +797,8 @@
             desc: '農夫の生産 +10000%',
             cost: 1,
             currency: 'RP',
-            x: 80,
-            y: 80,
+            x: 55,
+            y: 70,
             parent: 'art_irrig',
             icon: '🔄',
             treeId: 1,
@@ -804,8 +813,8 @@
             desc: '最も生産が高い設備を自動で購入 / On/Off可能',
             cost: 5,
             currency: 'RP',
-            x: 50,
-            y: 80,
+            x: 25,
+            y: 75,
             parent: 'art_iron',
             icon: '⚙️',
             treeId: 1,
@@ -816,17 +825,17 @@
         {
             id: 'haguruma',
             name: '歯車',
-            desc: '工場の生産が10000倍',
+            desc: '工場の生産が1000倍',
             cost: 1,
             currency: 'RP',
-            x: 50,
-            y: 50,
+            x: 25,
+            y: 95,
             parent: 'art_manager',
             icon: '⚙️',
             treeId: 1,
             apply: (g) => {
                 if (!g.producerMultipliers) g.producerMultipliers = {};
-                g.producerMultipliers['factory'] = (g.producerMultipliers['factory'] || 1) * 10001;
+                g.producerMultipliers['factory'] = (g.producerMultipliers['factory'] || 1) * 1001;
             }
         },
         // Tree 2
@@ -837,7 +846,7 @@
             cost: 1,
             currency: 'RP',
             x: 50,
-            y: 20,
+            y: 15,
             parent: null,
             icon: '🏭',
             treeId: 2,
@@ -853,7 +862,7 @@
             cost: 1,
             currency: 'RP',
             x: 50,
-            y: 50,
+            y: 40,
             parent: 'art_tree2_root',
             icon: '🔩',
             treeId: 2,
@@ -869,12 +878,125 @@
             cost: 1,
             currency: 'RP',
             x: 50,
-            y: 80,
+            y: 70,
             parent: 'art_screw',
             icon: '🔮',
             treeId: 2,
             apply: (g) => {
                 g.autoReincarnate = true;
+            }
+        },
+        // Enhanced Artifacts
+        {
+            id: 'art_villager_boost',
+            name: '村の掟',
+            desc: '村人の生産 x10000',
+            cost: 1,
+            currency: 'RP',
+            x: 75,
+            y: 50,
+            parent: 'art_coop',
+            icon: '📜',
+            treeId: 1,
+            apply: (g) => {
+                if (!g.producerMultipliers) g.producerMultipliers = {};
+                g.producerMultipliers['villager'] = (g.producerMultipliers['villager'] || 1) * 10001;
+            }
+        },
+        {
+            id: 'art_miner_boost',
+            name: '深層採掘',
+            desc: '採掘者の生産 x1000',
+            cost: 1,
+            currency: 'RP',
+            x: 10,
+            y: 60,
+            parent: 'art_iron',
+            icon: '🔦',
+            treeId: 1,
+            apply: (g) => {
+                if (!g.producerMultipliers) g.producerMultipliers = {};
+                g.producerMultipliers['miner'] = (g.producerMultipliers['miner'] || 1) * 1001;
+            }
+        },
+        {
+            id: 'art_coal_boost',
+            name: '黒いダイヤモンド',
+            desc: '炭鉱の生産 x500',
+            cost: 1,
+            currency: 'RP',
+            x: 30,
+            y: 40,
+            parent: 'art_tree2_root',
+            icon: '💎',
+            treeId: 2,
+            apply: (g) => {
+                if (!g.producerMultipliers) g.producerMultipliers = {};
+                g.producerMultipliers['coal_mine'] = (g.producerMultipliers['coal_mine'] || 1) * 501;
+            }
+        },
+        {
+            id: 'art_steam_boost',
+            name: '蒸気の力',
+            desc: '蒸気機関の生産 x500',
+            cost: 1,
+            currency: 'RP',
+            x: 30,
+            y: 60,
+            parent: 'art_coal_boost',
+            icon: '♨️',
+            treeId: 2,
+            apply: (g) => {
+                if (!g.producerMultipliers) g.producerMultipliers = {};
+                g.producerMultipliers['steam_engine'] = (g.producerMultipliers['steam_engine'] || 1) * 501;
+            }
+        },
+        {
+            id: 'art_oil_boost',
+            name: '黒い金',
+            desc: '油田の生産 x100',
+            cost: 1,
+            currency: 'RP',
+            x: 30,
+            y: 80,
+            parent: 'art_steam_boost',
+            icon: '🧴',
+            treeId: 2,
+            apply: (g) => {
+                if (!g.producerMultipliers) g.producerMultipliers = {};
+                g.producerMultipliers['oil_field'] = (g.producerMultipliers['oil_field'] || 1) * 101;
+            }
+        },
+        // Enhanced Automation
+        {
+            id: 'art_smart_gear',
+            name: '賢い歯車',
+            desc: '自動購入が「最大数購入」に進化する',
+            cost: 5,
+            currency: 'RP',
+            x: 45,
+            y: 95,
+            parent: 'art_manager',
+            icon: '⚙',
+            treeId: 1,
+            apply: (g) => {
+                g.autoBuyMax = true;
+            }
+        },
+        // Reincarnation Start Bonus
+        {
+            id: 'art_heaven_gift',
+            name: '天からの餞別',
+            desc: 'Blessing for you',
+            cost: 10,
+            currency: 'RP',
+            x: 50,
+            y: 90,
+            parent: 'art_stone_phi',
+            icon: '🎁',
+            treeId: 2,
+            apply: (g) => {
+                g.money += 499999999;
             }
         }];
 
@@ -916,19 +1038,44 @@
             }
         },
         {
-
-            id: 'hireOne',
+            id: 'hire999',
             name: 'Lv999の村人',
             desc: '???',
             condition: gs => producers.find(p => p.id === 'villager').count >= 999,
             rewarded: false,
             reward: gs => {
-                apply: (g) => {
-                    if (!g.producerMultipliers) g.producerMultipliers = {}
-
-                        ;
-                    g.producerMultipliers['villager'] = (g.producerMultipliers['villager'] || 1) * 999999999999;
-                }
+                if (!gs.producerMultipliers) gs.producerMultipliers = {};
+                gs.producerMultipliers['villager'] = (gs.producerMultipliers['villager'] || 1) * 999999999999;
+            }
+        },
+        {
+            id: 'steam_engine_unlock',
+            name: '蒸気の時代',
+            desc: '蒸気機関を1つ購入する',
+            condition: gs => producers.find(p => p.id === 'steam_engine').count >= 1,
+            rewarded: false,
+            reward: gs => {
+                gs.globalMultiplier *= 1.20;
+            }
+        },
+        {
+            id: 'energy_rev',
+            name: '第一次エネルギー革命',
+            desc: '油田を1つ購入する（石炭から石油へ）',
+            condition: gs => producers.find(p => p.id === 'oil_field').count >= 1,
+            rewarded: false,
+            reward: gs => {
+                gs.globalMultiplier *= 1.50;
+            }
+        },
+        {
+            id: 'oil_tycoon',
+            name: '石油王',
+            desc: '油田を10個所持する',
+            condition: gs => producers.find(p => p.id === 'oil_field').count >= 10,
+            rewarded: false,
+            reward: gs => {
+                gs.money += 1000000000;
             }
         }
 
@@ -1219,7 +1366,11 @@
                 for (let i = producers.length - 1; i >= 0; i--) {
                     const p = producers[i];
                     if (gameState.money >= nextCost(p)) {
-                        buyProducer(p.id);
+                        if (gameState.autoBuyMax) {
+                            buyProducerMax(p.id);
+                        } else {
+                            buyProducer(p.id);
+                        }
                         break; // Buy only one per tick to respect priority
                     }
                 }
