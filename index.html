@@ -641,12 +641,12 @@
         const defaultUpgrades = [{
 
             id: 'clickBoost',
-            name: 'クリック効率 +2',
+            name: 'クリック効率 *2',
             desc: 'クリックで得るZが増える',
             cost: 50,
             bought: false,
             apply: (g) => {
-                g.clickPower += 2
+                g.clickPower *= 2
             }
         }
 
@@ -1067,6 +1067,21 @@
             apply: (g) => {
                 g.money += 1;
             }
+        },
+        {
+            id: 'art_matrix',
+            name: 'マトリクス再定義',
+            desc: '転生時の獲得RPが10になる',
+            cost: 10,
+            currency: 'RP',
+            x: 75,
+            y: 70,
+            parent: 'art_stone_phi',
+            icon: '⭐',
+            treeId: 2,
+            apply: (g) => {
+                g.matrixRedefinition = true;
+            }
         }];
 
         const defaultAchievements = [{
@@ -1221,6 +1236,7 @@
             autoReincarnateActive: false,
             autoReincarnateThreshold: 0,
             isEmergencyStop: false,
+            matrixRedefinition: false,
             lastTick: Date.now()
         }
 
@@ -2090,6 +2106,7 @@
                     if (typeof gameState.autoManipulatorActive === 'undefined') gameState.autoManipulatorActive = false;
                     if (typeof gameState.autoManipulatorTarget === 'undefined') gameState.autoManipulatorTarget = '';
                     if (typeof gameState.autoManipulatorCap === 'undefined') gameState.autoManipulatorCap = 0;
+                    if (typeof gameState.matrixRedefinition === 'undefined') gameState.matrixRedefinition = false;
                 }
 
                 if (save.producers) {
@@ -2210,9 +2227,11 @@
                 const bonus = Math.sqrt(gameState.money / 1000000) * 0.1;
                 nextPrestige += bonus;
                 nextCount += 1;
-                nextRP += 1;
 
-                notify(`転生完了！ ボーナス +${(bonus * 100).toFixed(1)}% / RP +1`);
+                const gainedRP = gameState.matrixRedefinition ? 10 : 1;
+                nextRP += gainedRP;
+
+                notify(`転生完了！ ボーナス +${(bonus * 100).toFixed(1)}% / RP +${gainedRP}`);
             }
 
             else {
@@ -2280,6 +2299,7 @@
                 autoManipulatorActive: keepAutoMani,
                 autoManipulatorTarget: keepManiTarget,
                 autoManipulatorCap: keepManiCap,
+                matrixRedefinition: false, // Reset to false, will be re-applied by artifacts
                 lastTick: Date.now()
             };
 
