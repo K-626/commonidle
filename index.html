@@ -1021,6 +1021,21 @@
                 g.autoManipulator = true;
             }
         },
+        {
+            id: 'art_smart_manipulator',
+            name: '賢いマニピュレータ',
+            desc: 'マニピュレータが目標まで一括購入する',
+            cost: 20,
+            currency: 'RP',
+            x: 5,
+            y: 55,
+            parent: 'art_manipulator',
+            icon: '🦾',
+            treeId: 1,
+            apply: (g) => {
+                g.autoManipulatorMax = true;
+            }
+        },
         // Reincarnation Start Bonus
         {
             id: 'art_heaven_gift',
