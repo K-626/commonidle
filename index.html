@@ -493,7 +493,9 @@
                         </div>
                     </div>
                 </div>
-                <div class="card"><button id="saveBtn" class="buy-btn"
+                <div class="card"><button id="emergencyStopBtn" class="buy-btn"
+                        style="width:100%;margin-bottom:8px;border:1px solid #f59e0b;color:#f59e0b;background:transparent">緊急停止
+                        (自動化OFF)</button><button id="saveBtn" class="buy-btn"
                         style="width:100%;margin-bottom:8px">セーブ</button><button id="loadBtn" class="buy-btn"
                         style="width:100%;margin-bottom:8px">ロード</button><button id="resetBtn" class="buy-btn"
                         style="width:100%;background:#7f1d1d;border-color:#7f1d1d">リセット</button></div>
@@ -591,7 +593,7 @@
                 <div id="monoPanel"></div>
             </div>
             <div style="display:flex;gap:8px;align-items:center">
-                <div style="flex:1" class="small">バージョン: 1.0 · 保存はブラウザに保持</div>
+                <div style="flex:1" class="small">バージョン: 1.13 · 保存はブラウザに保持</div>
                 <div class="small" style="color:#ef4444;cursor:pointer;text-decoration:underline" id="deleteDataBtn">
                     データ削除</div>
             </div>
@@ -1218,6 +1220,7 @@
             autoReincarnate: false,
             autoReincarnateActive: false,
             autoReincarnateThreshold: 0,
+            isEmergencyStop: false,
             lastTick: Date.now()
         }
 
@@ -1464,6 +1467,30 @@
                 }
             }
 
+            // Emergency Stop Button UI
+            const emBtn = document.getElementById('emergencyStopBtn');
+            if (emBtn) {
+                if (gameState.isEmergencyStop) {
+                    emBtn.textContent = '緊急停止中 (クリックで再開)';
+                    emBtn.style.background = '#ef4444'; // Red
+                    emBtn.style.color = '#fff';
+                    emBtn.style.borderColor = '#ef4444';
+                } else {
+                    emBtn.textContent = '緊急停止 (自動化OFF)';
+                    emBtn.style.background = 'transparent';
+                    emBtn.style.color = '#f59e0b';
+                    emBtn.style.borderColor = '#f59e0b';
+                }
+
+                if (!emBtn._init) {
+                    emBtn.onclick = () => {
+                        gameState.isEmergencyStop = !gameState.isEmergencyStop;
+                        updateUI();
+                    };
+                    emBtn._init = true;
+                }
+            }
+
             renderMonoPanel();
             renderChiePanel();
             renderAchPanel();
@@ -1483,66 +1510,69 @@
             gameState.playTimeSec += dt;
 
             // Auto Buy Logic
-            if (gameState.autoBuy && gameState.autoBuyActive) {
-                // Prioritize highest tier affordable
-                for (let i = producers.length - 1; i >= 0; i--) {
-                    const p = producers[i];
-                    if (gameState.money >= nextCost(p)) {
-                        if (gameState.autoBuyMax) {
-                            buyProducerMax(p.id);
-                        } else {
-                            buyProducer(p.id);
-                        }
-                        break; // Buy only one per tick to respect priority
-                    }
-                }
-            }
-
-            // Manipulator Logic
-            if (gameState.autoManipulator && gameState.autoManipulatorActive) {
-                const limit = gameState.autoManipulatorCap || 0;
-                const targetId = gameState.autoManipulatorTarget;
-                if (targetId && limit > 0) {
-                    const p = producers.find(x => x.id === targetId);
-                    if (p && p.count < limit) {
-                        // Buy if affordable
-                        if (gameState.autoManipulatorMax) {
-                            // Smart Logic: Buy up to limit or max affordable
-                            const needed = limit - p.count;
-                            const affordable = calcMaxAffordable(p, gameState.money);
-                            const count = Math.min(needed, affordable);
-                            if (count > 0) {
-                                // Loop buy to ensure triggers fire properly
-                                for (let k = 0; k < count; k++) buyProducer(p.id);
-                            }
-                        } else {
-                            // Normal Logic
-                            if (gameState.money >= nextCost(p)) {
+            // EMERGENCY STOP CHECK
+            if (!gameState.isEmergencyStop) {
+                if (gameState.autoBuy && gameState.autoBuyActive) {
+                    // Prioritize highest tier affordable
+                    for (let i = producers.length - 1; i >= 0; i--) {
+                        const p = producers[i];
+                        if (gameState.money >= nextCost(p)) {
+                            if (gameState.autoBuyMax) {
+                                buyProducerMax(p.id);
+                            } else {
                                 buyProducer(p.id);
                             }
+                            break; // Buy only one per tick to respect priority
                         }
                     }
                 }
-            }
 
-            // Auto Upgrade Logic
-            if (gameState.autoUpgrade && gameState.autoUpgradeActive) {
-                // Try to buy unbought upgrades if affordable
-                for (const u of upgrades) {
-                    if (!u.bought && gameState.money >= u.cost) {
-                        buyUpgrade(u.id);
+                // Manipulator Logic
+                if (gameState.autoManipulator && gameState.autoManipulatorActive) {
+                    const limit = gameState.autoManipulatorCap || 0;
+                    const targetId = gameState.autoManipulatorTarget;
+                    if (targetId && limit > 0) {
+                        const p = producers.find(x => x.id === targetId);
+                        if (p && p.count < limit) {
+                            // Buy if affordable
+                            if (gameState.autoManipulatorMax) {
+                                // Smart Logic: Buy up to limit or max affordable
+                                const needed = limit - p.count;
+                                const affordable = calcMaxAffordable(p, gameState.money);
+                                const count = Math.min(needed, affordable);
+                                if (count > 0) {
+                                    // Loop buy to ensure triggers fire properly
+                                    for (let k = 0; k < count; k++) buyProducer(p.id);
+                                }
+                            } else {
+                                // Normal Logic
+                                if (gameState.money >= nextCost(p)) {
+                                    buyProducer(p.id);
+                                }
+                            }
+                        }
                     }
                 }
-            }
 
-            // Auto Reincarnate Logic
-            if (gameState.autoReincarnate && gameState.autoReincarnateActive && gameState.autoReincarnateThreshold > 0) {
-                // Minimum limit is 1e20 as per request
-                const effectiveThreshold = Math.max(gameState.autoReincarnateThreshold, 1e20);
-                if (gameState.money >= effectiveThreshold) {
-                    resetGame();
+                // Auto Upgrade Logic
+                if (gameState.autoUpgrade && gameState.autoUpgradeActive) {
+                    // Try to buy unbought upgrades if affordable
+                    for (const u of upgrades) {
+                        if (!u.bought && gameState.money >= u.cost) {
+                            buyUpgrade(u.id);
+                        }
+                    }
                 }
-            }
+
+                // Auto Reincarnate Logic
+                if (gameState.autoReincarnate && gameState.autoReincarnateActive && gameState.autoReincarnateThreshold > 0) {
+                    // Minimum limit is 1e20 as per request
+                    const effectiveThreshold = Math.max(gameState.autoReincarnateThreshold, 1e20);
+                    if (gameState.money >= effectiveThreshold) {
+                        resetGame();
+                    }
+                }
+            } // End of Emergency Stop Check
 
             checkAchievements();
             checkChallenges();
