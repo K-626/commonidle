@@ -1083,49 +1083,50 @@
                 g.matrixRedefinition = true;
             }
         },
+        // Custom User Artifacts
         {
-            id: 'ar',
+            id: 'art_a',
             name: 'あけましておめでとうございます',
-            desc: '',
+            desc: '全生産 ',
             cost: 1,
             currency: 'RP',
             x: 82,
             y: 70,
             parent: 'art_matrix',
-            icon: '⭐',
+            icon: 'あ',
             treeId: 2,
             apply: (g) => {
-                 g.globalMultiplier *= 1000000000000001
+                g.globalMultiplier *= 1000000;
             }
         },
         {
-            id: 'are',
+            id: 'art_i',
             name: '今年もよろしくお願いします',
-            desc: '',
+            desc: '全生産 ',
             cost: 1,
             currency: 'RP',
             x: 89,
             y: 70,
-            parent: 'ar',
-            icon: '⭐',
+            parent: 'art_a',
+            icon: '今',
             treeId: 2,
             apply: (g) => {
-                g.globalMultiplier *= 1000000000000001
+                g.globalMultiplier *= 10000000;
             }
-        },{
-            id: 'aret',
-            name: '今年もこのゲームを遊んでくれるとすごくすごく嬉しいです',
-            desc: '',
+        },
+        {
+            id: 'art_u',
+            name: '2026年もこのゲームを遊んでくれるとすごくすごく嬉しいです',
+            desc: '全生産 ',
             cost: 1,
             currency: 'RP',
-            x: 94,
+            x: 96,
             y: 70,
-            parent: 'are',
-            icon: '⭐',
+            parent: 'art_i',
+            icon: '2',
             treeId: 2,
             apply: (g) => {
-                g.globalMultiplier *= 1000000000000001
-                g.globalMultiplier *=g.globalMultiplier
+                g.globalMultiplier *=g.globalMultiplier;
             }
         }];
 
