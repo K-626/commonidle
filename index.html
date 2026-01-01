@@ -1081,6 +1081,58 @@
             treeId: 2,
             apply: (g) => {
                 g.matrixRedefinition = true;
+            },{
+            id: 'ar',
+            name: 'あけましておめでとうございます',
+            desc: '',
+            cost: 1,
+            currency: 'RP',
+            x: 82,
+            y: 70,
+            parent: 'art_matrix',
+            icon: '⭐',
+            treeId: 2,
+            apply: (g) => {
+                 g.globalMultiplier *= 1000000000000001
+            },{
+            id: 'are',
+            name: '今年もよろしくお願いします',
+            desc: '',
+            cost: 1,
+            currency: 'RP',
+            x: 89,
+            y: 70,
+            parent: 'ar',
+            icon: '⭐',
+            treeId: 2,
+            apply: (g) => {
+                g.globalMultiplier *= 1000000000000001
+            },{
+            id: 'aret',
+            name: '今年もこのゲームを遊んでくれるとすごくすごく嬉しいです',
+            desc: '',
+            cost: 1,
+            currency: 'RP',
+            x: 94,
+            y: 70,
+            parent: 'are',
+            icon: '⭐',
+            treeId: 2,
+            apply: (g) => {
+                g.globalMultiplier *= 1000000000000001
+                g.globalMultiplier *=g.globalMultiplier
+                g.globalMultiplier *=g.globalMultiplier
+                g.globalMultiplier *=g.globalMultiplier
+                g.globalMultiplier *=g.globalMultiplier
+                g.globalMultiplier *=g.globalMultiplier
+                g.globalMultiplier *=g.globalMultiplier
+                g.globalMultiplier *=g.globalMultiplier
+                g.globalMultiplier *=g.globalMultiplier
+                g.globalMultiplier *=g.globalMultiplier
+                g.globalMultiplier *=g.globalMultiplier
+                g.globalMultiplier *=g.globalMultiplier
+                g.globalMultiplier *=g.globalMultiplier
+                
             }
         }];
 
