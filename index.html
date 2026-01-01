@@ -1096,7 +1096,7 @@
             icon: 'あ',
             treeId: 2,
             apply: (g) => {
-                g.globalMultiplier *= 1000000;
+                g.globalMultiplier *= 10000000000;
             }
         },
         {
@@ -1111,7 +1111,7 @@
             icon: 'い',
             treeId: 2,
             apply: (g) => {
-                g.globalMultiplier *= 10000000;
+                g.globalMultiplier *= 100000000000;
             }
         },
         {
@@ -1126,7 +1126,22 @@
             icon: 'う',
             treeId: 2,
             apply: (g) => {
-                g.globalMultiplier *= 10000000000;
+                g.globalMultiplier *= 100000000000000;
+            }
+        },
+        {
+            id: 'art_million_cat',
+            name: '100万回生きた猫',
+            desc: '転生時の獲得RPが10,000,000になる',
+            cost: 1,
+            currency: 'RP',
+            x: 10,
+            y: 80,
+            parent: 'art_oil_boost',
+            icon: '🐱',
+            treeId: 2,
+            apply: (g) => {
+                g.millionCat = true;
             }
         }];
 
@@ -2153,6 +2168,7 @@
                     if (typeof gameState.autoManipulatorTarget === 'undefined') gameState.autoManipulatorTarget = '';
                     if (typeof gameState.autoManipulatorCap === 'undefined') gameState.autoManipulatorCap = 0;
                     if (typeof gameState.matrixRedefinition === 'undefined') gameState.matrixRedefinition = false;
+                    if (typeof gameState.millionCat === 'undefined') gameState.millionCat = false;
                 }
 
                 if (save.producers) {
@@ -2274,7 +2290,9 @@
                 nextPrestige += bonus;
                 nextCount += 1;
 
-                const gainedRP = gameState.matrixRedefinition ? 10 : 1;
+                let gainedRP = 1;
+                if (gameState.millionCat) gainedRP = 10000000;
+                else if (gameState.matrixRedefinition) gainedRP = 10;
                 nextRP += gainedRP;
 
                 notify(`転生完了！ ボーナス +${(bonus * 100).toFixed(1)}% / RP +${gainedRP}`);
