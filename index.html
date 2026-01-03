@@ -1116,34 +1116,21 @@
         },
         {
             id: 'art_u',
-            name: 'う',
-            desc: '全生産 ',
+            name: '2026年になっても遊んでくれるとすごくすごく嬉しいです',
+            desc: '全生産 x10000,000',
             cost: 1,
             currency: 'RP',
             x: 96,
             y: 70,
             parent: 'art_i',
-            icon: 'う',
+            icon: '2',
             treeId: 2,
             apply: (g) => {
-                g.globalMultiplier *= 100000000000000;
+                g.globalMultiplier *=g.globalMultiplier ;
+                g.globalMultiplier *=g.globalMultiplier ;
+                
             }
-        },
-        {
-            id: 'art_million_cat',
-            name: '100万回生きた猫',
-            desc: '転生時の獲得RPが10,000,000になる',
-            cost: 1,
-            currency: 'RP',
-            x: 10,
-            y: 80,
-            parent: 'art_oil_boost',
-            icon: '🐱',
-            treeId: 2,
-            apply: (g) => {
-                g.millionCat = true;
-            }
-        }];
+        },];
 
         const defaultAchievements = [{
 
